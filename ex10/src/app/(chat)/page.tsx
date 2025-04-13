@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Chat } from "@/components/chat/chat";
+import { ChatLanding } from "@/components/chat/chat-landing";
 
 // import { ExternalGallery } from "@/components/external-gallery/external-gallery";
 
 export default async function Page() {
     return (
         <div className="flex h-full w-full max-w-5xl flex-col items-center">
-            <Chat />
+            <ChatLanding />
             {/* <ExternalGallery /> */}
 
             <span className="text-muted-foreground mt-auto mb-3 text-sm">

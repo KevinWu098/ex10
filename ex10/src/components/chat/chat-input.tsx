@@ -1,3 +1,6 @@
+"use client";
+
+import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
     PromptInput,
@@ -5,28 +8,60 @@ import {
     PromptInputActions,
     PromptInputTextarea,
 } from "@/components/ui/prompt-input";
+import { cn } from "@/lib/utils";
+import { UseChatHelpers } from "@ai-sdk/react";
 import { ArrowUpIcon, SquareIcon } from "lucide-react";
 
 interface ChatInputProps {
     input: string;
-    isLoading: boolean;
     handleValueChange: (value: string) => void;
-    handleSubmit: () => void;
+    handleSubmit: UseChatHelpers["handleSubmit"];
+    status: UseChatHelpers["status"];
+    className?: string;
 }
 
 export function ChatInput({
     input,
-    isLoading,
     handleValueChange,
-    handleSubmit,
+    handleSubmit: submitChat,
+    status,
+    className,
 }: ChatInputProps) {
+    const isLoading = status === "submitted" || status === "streaming";
+
+    const handleClick = useCallback(() => {
+        if (status === "ready") {
+            handleSubmit();
+            return;
+        }
+
+        stop();
+    }, [stop]);
+
+    const handleSubmit = useCallback(
+        (
+            event?: {
+                preventDefault?: () => void;
+            },
+            chatRequestOptions?: any
+        ) => {
+            event?.preventDefault?.();
+
+            submitChat(event, chatRequestOptions);
+        },
+        [submitChat]
+    );
+
     return (
         <PromptInput
             value={input}
             onValueChange={handleValueChange}
             isLoading={isLoading}
             onSubmit={handleSubmit}
-            className="flex w-full max-w-3xl flex-row rounded-lg"
+            className={cn(
+                "flex w-full max-w-3xl flex-row rounded-lg",
+                className
+            )}
         >
             <PromptInputTextarea
                 placeholder="Type your message here..."
@@ -41,7 +76,7 @@ export function ChatInput({
                         variant="default"
                         size="icon"
                         className="h-8 w-8 rounded-full"
-                        onClick={handleSubmit}
+                        onClick={handleClick}
                     >
                         {isLoading ? (
                             <SquareIcon className="size-5 fill-current" />
