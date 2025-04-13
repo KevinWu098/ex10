@@ -28,15 +28,17 @@ export function ChatInput({
     className,
 }: ChatInputProps) {
     const isLoading = status === "submitted" || status === "streaming";
+    const isDisabled = status === "ready" && input.length === 0;
 
     const handleClick = useCallback(() => {
+        console.log("hit");
         if (status === "ready") {
             handleSubmit();
             return;
         }
 
         stop();
-    }, [stop]);
+    }, [status, stop]);
 
     const handleSubmit = useCallback(
         (
@@ -77,9 +79,10 @@ export function ChatInput({
                         size="icon"
                         className="h-8 w-8 rounded-full"
                         onClick={handleClick}
+                        disabled={isDisabled}
                     >
                         {isLoading ? (
-                            <SquareIcon className="size-5 fill-current" />
+                            <SquareIcon className="size-4 fill-current" />
                         ) : (
                             <ArrowUpIcon className="size-5" />
                         )}
