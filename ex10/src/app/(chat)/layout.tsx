@@ -1,4 +1,4 @@
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function Layout({
@@ -7,7 +7,9 @@ export default function Layout({
     return (
         <SidebarProvider defaultOpen={false}>
             <AppSidebar />
-            <SidebarInset>{children}</SidebarInset>
+            <SidebarInset className="flex items-center">
+                {children}
+            </SidebarInset>
         </SidebarProvider>
     );
 }
