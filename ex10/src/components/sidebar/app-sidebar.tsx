@@ -158,7 +158,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {...props}
         >
             <SidebarHeader>
-                <SidebarMenu>
+                <SidebarMenu className="invisible">
                     <SidebarMenuItem>
                         <SidebarMenuButton
                             size="lg"

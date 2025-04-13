@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
+import { NavToggle } from "@/components/sidebar/nav-toggle";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function Layout({
@@ -6,6 +7,7 @@ export default function Layout({
 }: Readonly<{ children: React.ReactNode }>) {
     return (
         <SidebarProvider defaultOpen={false}>
+            <NavToggle />
             <AppSidebar />
             <SidebarInset className="flex items-center">
                 {children}
