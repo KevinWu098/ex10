@@ -1,10 +1,11 @@
+import { Artifact } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
 
-export default function Page() {
+export default async function Page() {
     return (
-        <div className="flex h-full max-h-full w-full flex-row p-2">
+        <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">
             <Chat />
-            <div className="shrink-0 grow">artifact</div>
+            <Artifact content={"const foo = 'I love Javascript'"} />
         </div>
     );
 }
