@@ -22,7 +22,7 @@ export function ChatMessages({ messages, status }: ChatMessagesProps) {
     if (!messages?.length) return <div className="h-full w-full" />;
 
     return (
-        <div className="relative flex h-full w-full flex-col items-center overflow-x-hidden overflow-y-auto">
+        <div className="relative flex w-full flex-col items-center overflow-hidden">
             <ChatContainer
                 className="relative flex w-full flex-col items-center pt-20 pb-4"
                 autoScroll={true}
@@ -66,7 +66,7 @@ export function ChatMessages({ messages, status }: ChatMessagesProps) {
 
             <div className="absolute bottom-0 w-full max-w-3xl">
                 <ScrollButton
-                    className="absolute top-[-50px] right-[30px]"
+                    className="absolute -top-10 right-2"
                     scrollRef={scrollRef}
                     containerRef={containerRef}
                 />

@@ -6,7 +6,10 @@ export default function Layout({
     children,
 }: Readonly<{ children: React.ReactNode }>) {
     return (
-        <SidebarProvider defaultOpen={false}>
+        <SidebarProvider
+            defaultOpen={false}
+            className="max-h-dvh"
+        >
             <NavToggle />
             <AppSidebar />
             <SidebarInset className="flex items-center">
