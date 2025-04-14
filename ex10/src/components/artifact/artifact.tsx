@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import { javascript } from "@codemirror/lang-javascript";
 import { EditorState, Transaction } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
@@ -15,6 +16,8 @@ interface ArtifactProps {
 export function Artifact({ content }: ArtifactProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const editorRef = useRef<EditorView | null>(null);
+
+    const [value, setValue] = useState("code");
 
     useEffect(() => {
         if (containerRef.current && !editorRef.current) {
@@ -51,14 +54,14 @@ export function Artifact({ content }: ArtifactProps) {
                 editorRef.current = null;
             }
         };
-        // NOTE: we only want to run this effect once
-        // eslint-disable-next-line
     }, []);
 
     return (
         <Tabs
             defaultValue="code"
             className="grow"
+            value={value}
+            onValueChange={setValue}
         >
             <div className="border-input rounded-sm border p-2 shadow-xs">
                 <TabsList className="rounded-sm">
@@ -78,9 +81,15 @@ export function Artifact({ content }: ArtifactProps) {
             </div>
 
             <div className="border-input h-full max-h-full overflow-auto rounded-sm border pt-2 shadow-xs">
-                <TabsContent value="code">
+                <TabsContent
+                    value="code"
+                    forceMount // NB: forceMount prevents the code editor from being unmounted
+                >
                     <div
-                        className="not-prose relative w-full text-sm"
+                        className={cn(
+                            "not-prose relative w-full text-sm",
+                            value === "preview" && "hidden" // NB: prevents rendering while forceMount (see above)
+                        )}
                         ref={containerRef}
                     />
                 </TabsContent>
