@@ -33,6 +33,7 @@ export function Artifact({ content }: ArtifactProps) {
                         },
                         "&.cm-editor": {
                             backgroundColor: "#FFF",
+                            height: "100%",
                         },
                         ".cm-gutters": {
                             // The !important is necessary )=
@@ -55,6 +56,19 @@ export function Artifact({ content }: ArtifactProps) {
             }
         };
     }, []);
+
+    useEffect(() => {
+        if (editorRef.current) {
+            const transaction = editorRef.current.state.update({
+                changes: {
+                    from: 0,
+                    to: editorRef.current.state.doc.length,
+                    insert: content,
+                },
+            });
+            editorRef.current.dispatch(transaction);
+        }
+    }, [content]);
 
     return (
         <Tabs
@@ -84,10 +98,11 @@ export function Artifact({ content }: ArtifactProps) {
                 <TabsContent
                     value="code"
                     forceMount // NB: forceMount prevents the code editor from being unmounted
+                    className="flex h-full"
                 >
                     <div
                         className={cn(
-                            "not-prose relative w-full text-sm",
+                            "not-prose relative w-0 grow text-sm",
                             value === "preview" && "hidden" // NB: prevents rendering while forceMount (see above)
                         )}
                         ref={containerRef}
