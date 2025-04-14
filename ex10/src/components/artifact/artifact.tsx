@@ -28,6 +28,13 @@ export function Artifact({ content }: ArtifactProps) {
                         "&.cm-focused": {
                             outline: "none",
                         },
+                        "&.cm-editor": {
+                            backgroundColor: "#FFF",
+                        },
+                        ".cm-gutters": {
+                            // The !important is necessary )=
+                            backgroundColor: "#FFF !important",
+                        },
                     }),
                 ],
             });
@@ -70,10 +77,10 @@ export function Artifact({ content }: ArtifactProps) {
                 </TabsList>
             </div>
 
-            <div className="border-input h-full rounded-sm border shadow-xs">
+            <div className="border-input h-full max-h-full overflow-auto rounded-sm border pt-2 shadow-xs">
                 <TabsContent value="code">
                     <div
-                        className="not-prose relative w-full pb-[calc(80dvh)] text-sm"
+                        className="not-prose relative w-full text-sm"
                         ref={containerRef}
                     />
                 </TabsContent>
