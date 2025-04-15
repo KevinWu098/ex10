@@ -3,7 +3,7 @@
 // import { toPrompt } from "@/lib/prompt";
 // import ratelimit from "@/lib/ratelimit";
 // import { Templates } from "@/lib/templates";
-import { schema } from "@/app/(chat)/api/object/schema";
+import { schema } from "@/lib/schema";
 import { createOpenAI } from "@ai-sdk/openai";
 import { CoreMessage, LanguageModel, streamObject } from "ai";
 

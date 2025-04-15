@@ -63,3 +63,23 @@ export const schema = z.object({
 });
 
 export type FragmentSchema = z.infer<typeof schema>;
+
+export function isFragmentSchemaCode(
+    input: unknown
+): input is FragmentSchema["code"] {
+    if (!Array.isArray(input)) return false;
+
+    return input.every(
+        (item) =>
+            typeof item === "object" &&
+            item !== null &&
+            "file_name" in item &&
+            typeof (item as any).file_name === "string" &&
+            "file_path" in item &&
+            typeof (item as any).file_path === "string" &&
+            "file_content" in item &&
+            typeof (item as any).file_content === "string" &&
+            "file_finished" in item &&
+            typeof (item as any).file_finished === "boolean"
+    );
+}
