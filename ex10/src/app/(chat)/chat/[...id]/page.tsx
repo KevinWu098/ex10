@@ -116,7 +116,7 @@ export default function Page() {
         if (error) {
             stop();
         }
-    }, [error]);
+    }, [error, stop]);
 
     return (
         <div className="flex flex-row w-full h-full max-h-full gap-4 p-2">
@@ -124,9 +124,11 @@ export default function Page() {
                 input={input}
                 messages={messages}
                 isLoading={isLoading}
+                onStop={stop}
                 onValueChange={setInput}
                 onSubmit={handleSubmit}
             />
+
             <Artifact content={formatFileContent(fragment) || ""} />
         </div>
     );

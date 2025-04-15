@@ -1,23 +1,23 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { Message } from "@/app/(chat)/chat/[...id]/page";
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessages } from "@/components/chat/chat-messages";
-import { Message as UIMessage, useChat } from "@ai-sdk/react";
+import { ObjectMessage } from "@/lib/message";
 
 interface ChatProps {
-    messages: Message[];
+    messages: ObjectMessage[];
     isLoading: boolean;
     input: string;
     onValueChange: (value: string) => void;
     onSubmit: () => void;
+    onStop: () => void;
 }
 
 export function Chat({
     messages,
     isLoading,
     input,
+    onStop,
     onValueChange,
     onSubmit,
 }: ChatProps) {
@@ -37,9 +37,10 @@ export function Chat({
 
             <ChatInput
                 input={input}
+                isLoading={isLoading}
+                handleStop={onStop}
                 handleValueChange={onValueChange}
                 handleSubmit={onSubmit}
-                isLoading={isLoading}
                 className="w-full mt-auto"
             />
         </div>

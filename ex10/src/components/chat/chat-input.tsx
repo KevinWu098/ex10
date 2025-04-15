@@ -14,15 +14,17 @@ import { ArrowUpIcon, SquareIcon } from "lucide-react";
 
 interface ChatInputProps {
     input: string;
+    isLoading: boolean;
+    handleStop: VoidFunction;
     handleValueChange: (value: string) => void;
     handleSubmit: UseChatHelpers["handleSubmit"];
-    isLoading: boolean;
     className?: string;
 }
 
 export function ChatInput({
     input,
     handleValueChange,
+    handleStop,
     handleSubmit: submitChat,
     isLoading,
     className,
@@ -35,8 +37,8 @@ export function ChatInput({
             return;
         }
 
-        stop();
-    }, [stop]);
+        handleStop();
+    }, [isLoading, handleStop]);
 
     const handleSubmit = useCallback(
         (
