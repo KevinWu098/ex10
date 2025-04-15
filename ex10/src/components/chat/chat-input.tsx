@@ -16,7 +16,7 @@ interface ChatInputProps {
     input: string;
     handleValueChange: (value: string) => void;
     handleSubmit: UseChatHelpers["handleSubmit"];
-    status: UseChatHelpers["status"];
+    isLoading: boolean;
     className?: string;
 }
 
@@ -24,21 +24,19 @@ export function ChatInput({
     input,
     handleValueChange,
     handleSubmit: submitChat,
-    status,
+    isLoading,
     className,
 }: ChatInputProps) {
-    const isLoading = status === "submitted" || status === "streaming";
-    const isDisabled = status === "ready" && input.length === 0;
+    const isDisabled = !isLoading && input.length === 0;
 
     const handleClick = useCallback(() => {
-        console.log("hit");
-        if (status === "ready") {
+        if (!isLoading) {
             handleSubmit();
             return;
         }
 
         stop();
-    }, [status, stop]);
+    }, [stop]);
 
     const handleSubmit = useCallback(
         (
@@ -77,12 +75,12 @@ export function ChatInput({
                     <Button
                         variant="default"
                         size="icon"
-                        className="h-8 w-8 rounded-full"
+                        className="w-8 h-8 rounded-full"
                         onClick={handleClick}
                         disabled={isDisabled}
                     >
                         {isLoading ? (
-                            <SquareIcon className="size-4 fill-current" />
+                            <SquareIcon className="fill-current size-4" />
                         ) : (
                             <ArrowUpIcon className="size-5" />
                         )}
