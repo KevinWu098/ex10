@@ -7,6 +7,7 @@ import { Artifact } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
 import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { DeepPartial } from "ai";
+import { toast } from "sonner";
 
 export type MessageText = {
     type: "text";
@@ -76,7 +77,11 @@ export default function Page() {
                 // setMessage({ result });
                 // setCurrentTab("fragment");
                 // setIsPreviewLoading(false);
+
+                return;
             }
+
+            toast.error("An error occurred: " + error?.message);
         },
     });
 
