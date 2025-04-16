@@ -6,6 +6,7 @@ import { ArtifactFileNames } from "@/components/artifact/artifact-file-names";
 import { DownloadZip } from "@/components/chat/download-zip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FragmentSchema } from "@/lib/schema";
+import { cn } from "@/lib/utils";
 import { DeepPartial } from "ai";
 
 function formatFileContent(
@@ -72,7 +73,12 @@ export const Artifact = ({ fragment }: ArtifactProps) => {
                 />
             </div>
 
-            <div className="border-input flex shrink-0 gap-2 overflow-x-auto rounded-t-sm border border-b-0 p-2">
+            <div
+                className={cn(
+                    "border-input shrink-0 gap-2 overflow-x-auto rounded-t-sm border border-b-0 p-2",
+                    value === "code" ? "flex" : "hidden"
+                )}
+            >
                 <ArtifactFileNames
                     code={fragment?.code}
                     currentFile={currentFile}
@@ -82,7 +88,12 @@ export const Artifact = ({ fragment }: ArtifactProps) => {
                 {/* TODO: add copy button and download button */}
             </div>
 
-            <div className="border-input h-full overflow-auto rounded-b-sm border shadow-xs">
+            <div
+                className={cn(
+                    "border-input h-full overflow-auto rounded-b-sm border shadow-xs",
+                    value === "code" ? "rounded-b-sm" : "rounded-sm"
+                )}
+            >
                 <TabsContent
                     value="code"
                     forceMount // NB: forceMount prevents the code editor from being unmounted
