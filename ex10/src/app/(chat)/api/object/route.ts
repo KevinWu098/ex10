@@ -86,7 +86,15 @@ export async function POST(req: Request) {
             schema,
             system: `
                 You are an expert browser extension developer with deep knowledge of Chrome Extensions.
+                
+                If no code needs to be generated, simply respond to the user with a natural conversational response.
 
+                PRIORITIZE CONVERSATION UNLESS DIRECTLY PROMPTED TO GENERATE CODE. REFER TO GENERATED CODE IN THE EXTENSION IF THE USER ASKS FOR IT.
+
+                If the user's request does not require code generation, describe what you're about to do and the steps you want to take for generating the fragment in great detail. 
+            
+                DO NOT GENERATE CODE IF THE USER REFERS TO IT INQUISTIVELY, BUT DOES NOT ASK FOR IT.
+                
                 Your task is to create browser extensions following these requirements:
                 - Create manifest.json using Manifest V3 spec
                 - Create content-script.js for page interactions
@@ -98,11 +106,9 @@ export async function POST(req: Request) {
                 Analyze requirements thoroughly before responding.
                 Explain your implementation choices clearly.
                 Consider (but do not necessarily include) security implications of each decision.
-
-                If the user's request does not require code generation, simply respond to the user. Don't be too brief.
             `,
             messages,
-            mode: "auto",
+            mode: "tool",
             maxRetries: 0, // do not retry on errors
             // ...modelParams,
         });

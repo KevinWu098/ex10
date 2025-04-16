@@ -1,23 +1,38 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
+import { ArtifactFileNames } from "@/components/artifact/artifact-file-names";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FragmentSchema } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { javascript } from "@codemirror/lang-javascript";
 import { EditorState, Transaction } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
+import { DeepPartial } from "ai";
 import { basicSetup } from "codemirror";
 import { ayuLight } from "thememirror";
 
 interface ArtifactProps {
-    content: string;
+    fragment: DeepPartial<FragmentSchema> | undefined;
 }
 
-export const Artifact = memo(function Artifact({ content }: ArtifactProps) {
+function formatFileContent(fragment: DeepPartial<FragmentSchema> | undefined) {
+    const content = fragment?.code?.at(0)?.file_content;
+
+    // Unescape newline characters
+    return content?.includes("\\n") ? content.replace(/\\n/g, "\n") : content;
+}
+
+export const Artifact = memo(function Artifact({ fragment }: ArtifactProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const editorRef = useRef<EditorView | null>(null);
 
     const [value, setValue] = useState("code");
+    const [currentFile, setCurrentFile] = useState(
+        fragment?.code?.find((c) => c?.file_name)?.file_name ?? ""
+    );
+
+    const content = formatFileContent(fragment);
 
     useEffect(() => {
         if (containerRef.current && !editorRef.current) {
@@ -55,6 +70,9 @@ export const Artifact = memo(function Artifact({ content }: ArtifactProps) {
                 editorRef.current = null;
             }
         };
+
+        // NB: Only run on mount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -73,11 +91,11 @@ export const Artifact = memo(function Artifact({ content }: ArtifactProps) {
     return (
         <Tabs
             defaultValue="code"
-            className="grow"
+            className="grow gap-0 overflow-hidden"
             value={value}
             onValueChange={setValue}
         >
-            <div className="border-input rounded-sm border p-2 shadow-xs">
+            <div className="border-input mb-2 rounded-sm border p-2 shadow-xs">
                 <TabsList className="rounded-sm">
                     <TabsTrigger
                         value="code"
@@ -94,7 +112,15 @@ export const Artifact = memo(function Artifact({ content }: ArtifactProps) {
                 </TabsList>
             </div>
 
-            <div className="border-input h-full max-h-full overflow-auto rounded-sm border pt-2 shadow-xs">
+            <div className="border-input flex gap-2 rounded-t-sm border border-b-0 p-2">
+                <ArtifactFileNames
+                    code={fragment?.code}
+                    currentFile={currentFile}
+                    setCurrentFile={setCurrentFile}
+                />
+            </div>
+
+            <div className="border-input h-full overflow-auto rounded-b-sm border shadow-xs">
                 <TabsContent
                     value="code"
                     forceMount // NB: forceMount prevents the code editor from being unmounted

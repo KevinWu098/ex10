@@ -37,7 +37,6 @@ export function ChatMessage({
     if (variant === "user") {
         return (
             <ChatMessageUser
-                children={children}
                 copied={copied}
                 copyToClipboard={copyToClipboard}
                 // onReload={onReload}
@@ -46,20 +45,23 @@ export function ChatMessage({
                 id={id}
                 hasScrollAnchor={hasScrollAnchor}
                 attachments={attachments}
-            />
+            >
+                {children}
+            </ChatMessageUser>
         );
     }
 
     if (variant === "assistant") {
         return (
             <ChatMessageAssistant
-                children={children}
                 copied={copied}
                 copyToClipboard={copyToClipboard}
                 // onReload={onReload}
                 isLast={isLast}
                 hasScrollAnchor={hasScrollAnchor}
-            />
+            >
+                {children}
+            </ChatMessageAssistant>
         );
     }
 

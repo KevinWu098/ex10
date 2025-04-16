@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/prompt-input";
 import { cn } from "@/lib/utils";
 import { UseChatHelpers } from "@ai-sdk/react";
+import type { ChatRequestOptions } from "ai";
 import { ArrowUpIcon, SquareIcon } from "lucide-react";
 
 interface ChatInputProps {
@@ -31,21 +32,12 @@ export function ChatInput({
 }: ChatInputProps) {
     const isDisabled = !isLoading && input.length === 0;
 
-    const handleClick = useCallback(() => {
-        if (!isLoading) {
-            handleSubmit();
-            return;
-        }
-
-        handleStop();
-    }, [isLoading, handleStop]);
-
     const handleSubmit = useCallback(
         (
             event?: {
                 preventDefault?: () => void;
             },
-            chatRequestOptions?: any
+            chatRequestOptions?: ChatRequestOptions
         ) => {
             event?.preventDefault?.();
 
@@ -53,6 +45,15 @@ export function ChatInput({
         },
         [submitChat]
     );
+
+    const handleClick = useCallback(() => {
+        if (!isLoading) {
+            handleSubmit();
+            return;
+        }
+
+        handleStop();
+    }, [isLoading, handleSubmit, handleStop]);
 
     return (
         <PromptInput
@@ -77,12 +78,12 @@ export function ChatInput({
                     <Button
                         variant="default"
                         size="icon"
-                        className="w-8 h-8 rounded-full"
+                        className="h-8 w-8 rounded-full"
                         onClick={handleClick}
                         disabled={isDisabled}
                     >
                         {isLoading ? (
-                            <SquareIcon className="fill-current size-4" />
+                            <SquareIcon className="size-4 fill-current" />
                         ) : (
                             <ArrowUpIcon className="size-5" />
                         )}

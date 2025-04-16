@@ -13,7 +13,7 @@ export function ChatSuggestion({
     // TODO: Auto submit the suggestion
     const handleClick = useCallback(() => {
         setInputValue(suggestion);
-    }, [setInputValue]);
+    }, [suggestion, setInputValue]);
 
     return (
         <PromptSuggestion
