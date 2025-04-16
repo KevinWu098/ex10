@@ -6,21 +6,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FragmentSchema } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { javascript } from "@codemirror/lang-javascript";
-import { EditorState, Transaction } from "@codemirror/state";
+import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { DeepPartial } from "ai";
 import { basicSetup } from "codemirror";
 import { ayuLight } from "thememirror";
 
-interface ArtifactProps {
-    fragment: DeepPartial<FragmentSchema> | undefined;
-}
-
-function formatFileContent(fragment: DeepPartial<FragmentSchema> | undefined) {
-    const content = fragment?.code?.at(0)?.file_content;
+function formatFileContent(
+    fragment: DeepPartial<FragmentSchema> | undefined,
+    currentFile: string
+): string | undefined {
+    const content = fragment?.code?.find(
+        (c) => c?.file_name === currentFile
+    )?.file_content;
 
     // Unescape newline characters
     return content?.includes("\\n") ? content.replace(/\\n/g, "\n") : content;
+}
+
+interface ArtifactProps {
+    fragment: DeepPartial<FragmentSchema> | undefined;
 }
 
 export const Artifact = memo(function Artifact({ fragment }: ArtifactProps) {
@@ -32,7 +37,7 @@ export const Artifact = memo(function Artifact({ fragment }: ArtifactProps) {
         fragment?.code?.find((c) => c?.file_name)?.file_name ?? ""
     );
 
-    const content = formatFileContent(fragment);
+    const content = formatFileContent(fragment, currentFile);
 
     useEffect(() => {
         if (containerRef.current && !editorRef.current) {
@@ -118,6 +123,8 @@ export const Artifact = memo(function Artifact({ fragment }: ArtifactProps) {
                     currentFile={currentFile}
                     setCurrentFile={setCurrentFile}
                 />
+
+                {/* TODO: add copy button and download button */}
             </div>
 
             <div className="border-input h-full overflow-auto rounded-b-sm border shadow-xs">
