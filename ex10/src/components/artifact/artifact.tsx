@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { javascript } from "@codemirror/lang-javascript";
@@ -13,7 +13,7 @@ interface ArtifactProps {
     content: string;
 }
 
-export function Artifact({ content }: ArtifactProps) {
+export const Artifact = memo(function Artifact({ content }: ArtifactProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const editorRef = useRef<EditorView | null>(null);
 
@@ -115,4 +115,4 @@ export function Artifact({ content }: ArtifactProps) {
             </div>
         </Tabs>
     );
-}
+});

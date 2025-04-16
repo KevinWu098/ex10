@@ -1,30 +1,40 @@
-import { useRef } from "react";
+import { memo, useRef } from "react";
 import { ChatMessage } from "@/components/chat/chat-message";
 import { ChatContainer } from "@/components/ui/chat-container";
-import { Message } from "@/components/ui/message";
 import { ScrollButton } from "@/components/ui/scroll-button";
-import type { Message as MessageType, UseChatHelpers } from "@ai-sdk/react";
+import { ObjectMessage } from "@/lib/message";
+import type { Message as MessageType } from "@ai-sdk/react";
 import { LoaderIcon } from "lucide-react";
 
 interface ChatMessagesProps {
-    messages: MessageType[];
+    messages: ObjectMessage[];
     isLoading: boolean;
     // onDelete
     // onEdit
     // onReload
 }
 
-export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
+export const ChatMessages = memo(function ChatMessages({
+    messages: objectMessages,
+    isLoading,
+}: ChatMessagesProps) {
+    const messages = objectMessages.map((message) => ({
+        id: crypto.randomUUID(),
+        role: message.role,
+        content: message.content.find((c) => c.type === "text")?.text || "",
+        experimental_attachments: [],
+    }));
+
     const initialMessageCount = useRef(messages.length);
     const scrollRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    if (!messages?.length) return <div className="w-full h-full" />;
+    if (!messages?.length) return <div className="h-full w-full" />;
 
     return (
-        <div className="relative flex flex-col items-center w-full overflow-hidden">
+        <div className="relative flex w-full flex-col items-center overflow-hidden">
             <ChatContainer
-                className="relative flex flex-col items-center w-full pt-20 pb-4"
+                className="relative flex w-full flex-col items-center pt-20 pb-4"
                 autoScroll={true}
                 ref={containerRef}
                 scrollToRef={scrollRef}
@@ -57,7 +67,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
                 {isLoading &&
                     messages.length > 0 &&
                     messages.at(messages.length - 1)?.role === "user" && (
-                        <div className="flex flex-col items-start w-full max-w-3xl gap-2 px-6 pb-2 group min-h-scroll-anchor">
+                        <div className="group min-h-scroll-anchor flex w-full max-w-3xl flex-col items-start gap-2 px-6 pb-2">
                             <LoaderIcon />
                         </div>
                     )}
@@ -72,4 +82,4 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
             </div>
         </div>
     );
-}
+});
