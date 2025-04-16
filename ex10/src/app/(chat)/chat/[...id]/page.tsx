@@ -14,32 +14,31 @@ import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { DeepPartial } from "ai";
 import { toast } from "sonner";
 
-const example: DeepPartial<FragmentSchema> = {
-    commentary:
-        "I will create a simple example of a Chrome extension that changes the background color of a webpage. This will include a manifest file and a content script. The manifest will be structured according to Manifest V3 specifications, and the content script will handle the interaction with the webpage. I'll ensure to follow best practices for security and functionality.",
-    title: "Background Color Changer",
-    code: [
-        {
-            file_name: "manifest.json",
-            file_path: "manifest.json",
-            file_content:
-                '{\\n  "manifest_version": 3,\\n  "name": "Background Color Changer",\\n  "version": "1.0",\\n  "description": "A simple extension to change the background color of a webpage.",\\n  "permissions": [],\\n  "background": {\\n    "service_worker": "background.js"\\n  },\\n  "content_scripts": [\\n    {\\n      "matches": ["<all_urls>"],\\n      "js": ["content-script.js"]\\n    }\\n  ]\\n}',
-            file_finished: true,
-        },
-        {
-            file_name: "content-script.js",
-            file_path: "content-script.js",
-            file_content: "document.body.style.backgroundColor = 'lightblue';",
-            file_finished: true,
-        },
-    ],
-};
+// const example: DeepPartial<FragmentSchema> = {
+//     commentary:
+//         "I will create a simple example of a Chrome extension that changes the background color of a webpage. This will include a manifest file and a content script. The manifest will be structured according to Manifest V3 specifications, and the content script will handle the interaction with the webpage. I'll ensure to follow best practices for security and functionality.",
+//     title: "Background Color Changer",
+//     code: [
+//         {
+//             file_name: "manifest.json",
+//             file_path: "manifest.json",
+//             file_content:
+//                 '{\\n  "manifest_version": 3,\\n  "name": "Background Color Changer",\\n  "version": "1.0",\\n  "description": "A simple extension to change the background color of a webpage.",\\n  "permissions": [],\\n  "background": {\\n    "service_worker": "background.js"\\n  },\\n  "content_scripts": [\\n    {\\n      "matches": ["<all_urls>"],\\n      "js": ["content-script.js"]\\n    }\\n  ]\\n}',
+//             file_finished: true,
+//         },
+//         {
+//             file_name: "content-script.js",
+//             file_path: "content-script.js",
+//             file_content: "document.body.style.backgroundColor = 'lightblue';",
+//             file_finished: true,
+//         },
+//     ],
+// };
 
 export default function Page() {
     const [messages, setMessages] = useState<ObjectMessage[]>([]);
     const [errorMessage, setErrorMessage] = useState("");
-    const [fragment, setFragment] =
-        useState<DeepPartial<FragmentSchema>>(example);
+    const [fragment, setFragment] = useState<DeepPartial<FragmentSchema>>();
     const [input, setInput] = useState("");
 
     const { object, submit, isLoading, stop, error } = useObject({
