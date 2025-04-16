@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Artifact } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
-import { ObjectMessage } from "@/lib/message";
+import { ObjectMessage, toAISDKMessages } from "@/lib/message";
 import {
     isFragmentSchemaCode,
     schema,
@@ -40,6 +40,7 @@ export default function Page() {
         },
         onFinish: async ({ object, error }) => {
             console.log("hit", error);
+            console.log("object", object);
 
             if (!error) {
                 return;
@@ -57,7 +58,10 @@ export default function Page() {
 
         submit({
             userID: "123",
-            messages: [...messages, { role: "user", content: input }],
+            messages: toAISDKMessages([
+                ...messages,
+                { role: "user", content: [{ type: "text", text: input }] },
+            ]),
         });
 
         setInput("");
@@ -100,6 +104,8 @@ export default function Page() {
                     content,
                     object,
                 });
+
+                return;
             }
 
             if (lastMessage && lastMessage.role === "assistant") {
@@ -108,6 +114,8 @@ export default function Page() {
                     content,
                     object,
                 });
+
+                return;
             }
         }
     }, [object]);
@@ -119,7 +127,7 @@ export default function Page() {
     }, [error, stop]);
 
     return (
-        <div className="flex flex-row w-full h-full max-h-full gap-4 p-2">
+        <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">
             <Chat
                 input={input}
                 messages={messages}
