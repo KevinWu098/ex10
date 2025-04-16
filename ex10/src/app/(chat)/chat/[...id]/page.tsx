@@ -63,13 +63,9 @@ export default function Page() {
         },
     });
 
-    const addMessage = useCallback(
-        (message: ObjectMessage) => {
-            setMessages((previousMessages) => [...previousMessages, message]);
-            return [...messages, message];
-        },
-        [messages]
-    );
+    const addMessage = useCallback((message: ObjectMessage): void => {
+        setMessages((previousMessages) => [...previousMessages, message]);
+    }, []);
 
     const handleSubmit = useCallback(() => {
         addMessage({
