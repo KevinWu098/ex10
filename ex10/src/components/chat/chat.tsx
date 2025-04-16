@@ -22,7 +22,7 @@ export function Chat({
     onSubmit,
 }: ChatProps) {
     return (
-        <div className="flex w-full max-w-3xl flex-col items-center">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
             <ChatMessages
                 messages={messages}
                 isLoading={isLoading}

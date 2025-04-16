@@ -39,6 +39,7 @@ export const schema = z.object({
     //     .describe(
     //         "Port number used by the resulted fragment. Null when no ports are exposed."
     //     ),
+    extension_name: z.string().describe("Name of the extension."),
     code: z
         .array(
             z.object({
