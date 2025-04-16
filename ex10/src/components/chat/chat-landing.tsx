@@ -29,6 +29,7 @@ export function ChatLanding() {
                     isLoading={isLoading}
                     handleValueChange={handleValueChange}
                     handleSubmit={handleSubmit}
+                    handleStop={() => {}}
                 />
                 <ChatSuggestions
                     suggestions={[

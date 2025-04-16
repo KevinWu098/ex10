@@ -20,7 +20,7 @@ function parseMarkdownIntoBlocks(markdown: string): string[] {
 function extractLanguage(className?: string): string {
   if (!className) return "plaintext"
   const match = className.match(/language-(\w+)/)
-  return match ? match[1] : "plaintext"
+  return (match ? match[1] : "plaintext") ?? ""
 }
 
 const INITIAL_COMPONENTS: Partial<Components> = {
