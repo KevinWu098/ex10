@@ -63,6 +63,14 @@ export default function Page() {
         },
     });
 
+    const addMessage = useCallback(
+        (message: ObjectMessage) => {
+            setMessages((previousMessages) => [...previousMessages, message]);
+            return [...messages, message];
+        },
+        [messages]
+    );
+
     const handleSubmit = useCallback(() => {
         addMessage({
             role: "user",
@@ -91,14 +99,6 @@ export default function Page() {
             return updatedMessages;
         });
     }
-
-    const addMessage = useCallback(
-        (message: ObjectMessage) => {
-            setMessages((previousMessages) => [...previousMessages, message]);
-            return [...messages, message];
-        },
-        [messages]
-    );
 
     useEffect(() => {
         const lastMessage = messages.at(-1);
