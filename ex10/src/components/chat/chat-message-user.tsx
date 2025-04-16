@@ -18,12 +18,12 @@ import {
 } from "@/components/ui/message";
 import { cn } from "@/lib/utils";
 import { Message as MessageType } from "@ai-sdk/react";
-import { Check, Copy, Pencil, Trash2 } from "lucide-react";
+import { Check, Copy, Trash2 } from "lucide-react";
 
-const getTextFromDataUrl = (dataUrl: string) => {
-    const base64 = dataUrl.split(",")[1];
-    return base64;
-};
+// const getTextFromDataUrl = (dataUrl: string) => {
+//     const base64 = dataUrl.split(",")[1];
+//     return base64;
+// };
 
 export type MessageUserProps = {
     hasScrollAnchor?: boolean;
@@ -39,14 +39,14 @@ export type MessageUserProps = {
 
 export function ChatMessageUser({
     hasScrollAnchor,
-    attachments,
+    attachments: _attachments,
     children,
     copied,
     copyToClipboard,
     // onEdit,
     // onReload,
     // onDelete,
-    id,
+    id: _id,
 }: MessageUserProps) {
     const [editInput, setEditInput] = useState(children);
     const [isEditing, setIsEditing] = useState(false);
@@ -92,7 +92,7 @@ export function ChatMessageUser({
                         >
                             <MorphingDialogTrigger className="z-10">
                                 <img
-                                    className="mb-1 w-40 rounded-md"
+                                    className="w-40 mb-1 rounded-md"
                                     key={attachment.name}
                                     src={attachment.url}
                                     alt={attachment.name}
@@ -110,7 +110,7 @@ export function ChatMessageUser({
                             </MorphingDialogContainer>
                         </MorphingDialog>
                     ) : attachment.contentType?.startsWith("text") ? (
-                        <div className="text-primary mb-3 h-24 w-40 overflow-hidden rounded-md border p-2 text-xs">
+                        <div className="w-40 h-24 p-2 mb-3 overflow-hidden text-xs border rounded-md text-primary">
                             {getTextFromDataUrl(attachment.url)}
                         </div>
                     ) : null}
@@ -189,7 +189,7 @@ export function ChatMessageUser({
           delayDuration={0}
         >
           <button
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent transition"
+            className="flex items-center justify-center w-8 h-8 transition bg-transparent rounded-full"
             aria-label="Edit"
             onClick={() => setIsEditing(!isEditing)}
             type="button"

@@ -3,7 +3,6 @@ import { ChatMessage } from "@/components/chat/chat-message";
 import { ChatContainer } from "@/components/ui/chat-container";
 import { ScrollButton } from "@/components/ui/scroll-button";
 import { ObjectMessage } from "@/lib/message";
-import type { Message as MessageType } from "@ai-sdk/react";
 import { LoaderIcon } from "lucide-react";
 
 interface ChatMessagesProps {

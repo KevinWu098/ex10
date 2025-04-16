@@ -79,12 +79,12 @@ export function isFragmentSchemaCode(
             typeof item === "object" &&
             item !== null &&
             "file_name" in item &&
-            typeof (item as any).file_name === "string" &&
+            typeof item.file_name === "string" &&
             "file_path" in item &&
-            typeof (item as any).file_path === "string" &&
+            typeof item.file_path === "string" &&
             "file_content" in item &&
-            typeof (item as any).file_content === "string" &&
+            typeof item.file_content === "string" &&
             "file_finished" in item &&
-            typeof (item as any).file_finished === "boolean"
+            typeof item.file_finished === "boolean"
     );
 }

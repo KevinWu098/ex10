@@ -37,7 +37,7 @@ import { toast } from "sonner";
 
 export default function Page() {
     const [messages, setMessages] = useState<ObjectMessage[]>([]);
-    const [errorMessage, setErrorMessage] = useState("");
+    const [_errorMessage, setErrorMessage] = useState("");
     const [fragment, setFragment] = useState<DeepPartial<FragmentSchema>>();
     const [input, setInput] = useState("");
 
@@ -92,10 +92,13 @@ export default function Page() {
         });
     }
 
-    function addMessage(message: ObjectMessage) {
-        setMessages((previousMessages) => [...previousMessages, message]);
-        return [...messages, message];
-    }
+    const addMessage = useCallback(
+        (message: ObjectMessage) => {
+            setMessages((previousMessages) => [...previousMessages, message]);
+            return [...messages, message];
+        },
+        [messages]
+    );
 
     useEffect(() => {
         const lastMessage = messages.at(-1);

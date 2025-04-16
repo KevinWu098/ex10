@@ -16,7 +16,7 @@ export type ScrollButtonProps = {
 } & React.ButtonHTMLAttributes<HTMLButtonElement>
 
 function ScrollButton({
-  scrollRef,
+  scrollRef: _,
   containerRef,
   className,
   threshold = 100,
@@ -71,7 +71,7 @@ function ScrollButton({
       onClick={handleScroll}
       {...props}
     >
-      <ChevronDown className="h-4 w-4" />
+      <ChevronDown className="w-4 h-4" />
     </Button>
   )
 }

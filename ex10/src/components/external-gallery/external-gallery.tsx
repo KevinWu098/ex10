@@ -1,7 +1,4 @@
-import {
-    GalleryItem,
-    galleryItems,
-} from "@/components/external-gallery/external-gallery-data";
+import { galleryItems } from "@/components/external-gallery/external-gallery-data";
 
 export function ExternalGallery() {
     return (
