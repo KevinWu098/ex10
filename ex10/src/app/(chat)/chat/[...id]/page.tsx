@@ -39,9 +39,6 @@ export default function Page() {
             setErrorMessage(error.message);
         },
         onFinish: async ({ object, error }) => {
-            console.log("hit", error);
-            console.log("object", object);
-
             if (!error) {
                 return;
             }
@@ -92,10 +89,14 @@ export default function Page() {
 
             const content: ObjectMessage["content"] = [
                 { type: "text", text: object?.commentary || "" },
-                {
-                    type: "code",
-                    code: isFragmentSchemaCode(object?.code) ? object.code : [],
-                },
+                isFragmentSchemaCode(object?.code)
+                    ? { type: "code", code: object.code }
+                    : {
+                          type: "text",
+                          text:
+                              object.commentary ??
+                              "[ERROR]: No output generated",
+                      },
             ];
 
             if (!lastMessage || lastMessage.role !== "assistant") {

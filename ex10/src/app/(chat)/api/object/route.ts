@@ -98,6 +98,8 @@ export async function POST(req: Request) {
                 Analyze requirements thoroughly before responding.
                 Explain your implementation choices clearly.
                 Consider (but do not necessarily include) security implications of each decision.
+
+                If the user's request does not require code generation, simply respond to the user. Don't be too brief.
             `,
             messages,
             mode: "auto",
