@@ -137,7 +137,10 @@ export default function Page() {
                 return;
             }
         }
-    }, [object, addMessage, messages]);
+
+        // NB: lastMessage should not trigger a re-render
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [object, addMessage]);
 
     useEffect(() => {
         if (error) {

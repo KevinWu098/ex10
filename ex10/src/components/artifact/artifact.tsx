@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArtifactFileNames } from "@/components/artifact/artifact-file-names";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FragmentSchema } from "@/lib/schema";
@@ -28,16 +28,23 @@ interface ArtifactProps {
     fragment: DeepPartial<FragmentSchema> | undefined;
 }
 
-export const Artifact = memo(function Artifact({ fragment }: ArtifactProps) {
+export const Artifact = ({ fragment }: ArtifactProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const editorRef = useRef<EditorView | null>(null);
 
     const [value, setValue] = useState("code");
-    const [currentFile, setCurrentFile] = useState(
-        fragment?.code?.find((c) => c?.file_name)?.file_name ?? ""
-    );
+    const [currentFile, setCurrentFile] = useState<string>("");
 
     const content = formatFileContent(fragment, currentFile);
+
+    // ! This is a hack.
+    useEffect(() => {
+        const firstFileName = fragment?.code?.at(0)?.file_name;
+
+        if (firstFileName && !currentFile) {
+            setCurrentFile(firstFileName);
+        }
+    }, [fragment?.code, currentFile]);
 
     useEffect(() => {
         if (containerRef.current && !editorRef.current) {
@@ -117,7 +124,7 @@ export const Artifact = memo(function Artifact({ fragment }: ArtifactProps) {
                 </TabsList>
             </div>
 
-            <div className="border-input flex gap-2 rounded-t-sm border border-b-0 p-2">
+            <div className="border-input flex shrink-0 gap-2 overflow-x-auto rounded-t-sm border border-b-0 p-2">
                 <ArtifactFileNames
                     code={fragment?.code}
                     currentFile={currentFile}
@@ -148,4 +155,4 @@ export const Artifact = memo(function Artifact({ fragment }: ArtifactProps) {
             </div>
         </Tabs>
     );
-});
+};

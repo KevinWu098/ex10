@@ -32,7 +32,7 @@ export const ArtifactFileName = memo(
                 key={file_name}
                 variant="ghost"
                 className={cn(
-                    "text-muted-foreground hover:bg-muted flex items-center gap-2 rounded-sm border text-sm select-none",
+                    "text-muted-foreground hover:bg-muted flex h-8 min-h-0 items-center gap-2 rounded-sm border px-2 py-1 text-sm select-none",
                     file_name === currentFile ? "bg-muted border-muted" : ""
                 )}
                 onClick={handleClick}
