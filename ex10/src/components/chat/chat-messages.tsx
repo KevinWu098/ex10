@@ -1,5 +1,5 @@
 import { memo, useRef } from "react";
-import { ChatMessage } from "@/components/chat/chat-message";
+import { ChatMessageParts } from "@/components/chat/chat-message-parts";
 import { ChatContainer } from "@/components/ui/chat-container";
 import { ScrollButton } from "@/components/ui/scroll-button";
 import { UIMessage } from "ai";
@@ -15,14 +15,6 @@ interface ChatMessagesProps {
 
 export const ChatMessages = memo(
     ({ messages, isLoading }: ChatMessagesProps) => {
-        // console.log("hit");
-        // const messages = objectMessages.map((message) => ({
-        //     id: crypto.randomUUID(),
-        //     role: message.role,
-        //     content: message.content.find((c) => c.type === "text")?.text || "",
-        //     experimental_attachments: [],
-        // }));
-
         const initialMessageCount = useRef(messages.length);
         const scrollRef = useRef<HTMLDivElement>(null);
         const containerRef = useRef<HTMLDivElement>(null);
@@ -48,19 +40,17 @@ export const ChatMessages = memo(
                             messages.length > initialMessageCount.current;
 
                         return (
-                            <ChatMessage
+                            <ChatMessageParts
                                 key={message.id}
-                                id={message.id}
-                                variant={message.role}
-                                attachments={message.experimental_attachments}
+                                messageId={message.id}
+                                messageRole={message.role}
+                                parts={message.parts}
                                 isLast={isLast}
                                 // onDelete={onDelete}
                                 // onEdit={onEdit}
                                 // onReload={onReload}
                                 hasScrollAnchor={hasScrollAnchor}
-                            >
-                                {message.content}
-                            </ChatMessage>
+                            />
                         );
                     })}
 

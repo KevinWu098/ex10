@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Artifact } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
 import { type FragmentSchema } from "@/lib/schema";
 import { generateUUID } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
-import { DeepPartial } from "ai";
+import { DeepPartial, UIMessage } from "ai";
 import { parseAsBoolean, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
@@ -33,11 +33,11 @@ const example: DeepPartial<FragmentSchema> = {
 
 interface ClientProps {
     id: string;
+    initialMessages?: Array<UIMessage>;
 }
 
-export function Client({ id }: ClientProps) {
-    const [suggestion] = useQueryState("suggestion", { defaultValue: "" });
-    const [run] = useQueryState("run", parseAsBoolean.withDefault(false));
+export function Client({ id, initialMessages }: ClientProps) {
+    const [initialInput] = useQueryState("initialInput", { defaultValue: "" });
 
     const [fragment, setFragment] = useState<DeepPartial<FragmentSchema>>();
 
@@ -54,7 +54,9 @@ export function Client({ id }: ClientProps) {
         error,
     } = useChat({
         id,
-        initialInput: suggestion,
+        body: { id },
+        initialInput: !initialMessages?.length ? initialInput : "",
+        initialMessages,
         experimental_throttle: 100,
         sendExtraMessageFields: true,
         generateId: generateUUID,
@@ -67,6 +69,15 @@ export function Client({ id }: ClientProps) {
             console.log("onFinish", message);
         },
     });
+
+    // ! this is a hack
+    const initialRender = useRef(true);
+    useEffect(() => {
+        if (initialInput && !initialMessages?.length && initialRender.current) {
+            handleSubmit();
+            initialRender.current = false;
+        }
+    }, [initialInput, handleSubmit, initialMessages?.length]);
 
     return (
         <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">

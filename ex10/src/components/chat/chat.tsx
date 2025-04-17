@@ -23,6 +23,7 @@ export function Chat({
     onSubmit,
 }: ChatProps) {
     const isLoading = status === "streaming" || status === "submitted";
+
     return (
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
             <ChatMessages

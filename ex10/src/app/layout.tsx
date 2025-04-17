@@ -5,6 +5,8 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 import "./globals.css";
 
+import { ThemeProvider } from "@/components/theme-provider";
+
 const geistSans = Geist({
     variable: "--font-geist-sans",
     subsets: ["latin"],
@@ -26,13 +28,23 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en">
+        <html
+            lang="en"
+            suppressHydrationWarning
+        >
             <body
                 className={`${geistSans.variable} ${geistMono.variable} min-w-5xl antialiased`}
             >
-                <NuqsAdapter>
-                    <main>{children}</main>
-                </NuqsAdapter>
+                <ThemeProvider
+                    attribute="class"
+                    defaultTheme="light"
+                    forcedTheme="light"
+                    enableSystem
+                >
+                    <NuqsAdapter>
+                        <main>{children}</main>
+                    </NuqsAdapter>
+                </ThemeProvider>
                 <Toaster richColors />
             </body>
         </html>

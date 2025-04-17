@@ -42,6 +42,7 @@
         "react-dom": "^19.0.0",
         "react-markdown": "^10.1.0",
         "remark-gfm": "^4.0.1",
+        "server-only": "^0.0.1",
         "shiki": "^3.2.2",
         "sonner": "^2.0.3",
         "tailwind-merge": "^3.2.0",
