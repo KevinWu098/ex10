@@ -99,7 +99,10 @@ export const Artifact = memo(({ code }: ArtifactProps) => {
                 <TabsContent
                     value="code"
                     forceMount // NB: forceMount prevents the code editor from being unmounted
-                    className="flex h-full"
+                    className={cn(
+                        "flex",
+                        value === "preview" ? "h-0" : "h-full"
+                    )}
                 >
                     <ArtifactCode
                         value={value}
@@ -107,8 +110,15 @@ export const Artifact = memo(({ code }: ArtifactProps) => {
                     />
                 </TabsContent>
 
-                <TabsContent value="preview">
-                    <div className="p-4">Preview content</div>
+                <TabsContent
+                    value="preview"
+                    className="flex h-full"
+                >
+                    <iframe
+                        className="h-full w-full border-0"
+                        title="Preview"
+                        src="https://www.google.com"
+                    />
                 </TabsContent>
             </div>
         </Tabs>
