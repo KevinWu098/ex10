@@ -23,7 +23,7 @@ app.post('/updateCode', (req, res) => {
   res.status(200).json({ message: 'updateCode endpoint placeholder' });
 });
 
-// Store WebSocket proxies by session ID to avoid recreating them
+// store session proxies for each session id so we don't recreate them on each request
 const sessionProxies: Record<string, any> = {};
 
 // Proxy to xpra server instead of redirecting
