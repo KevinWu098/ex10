@@ -11,7 +11,7 @@ import {
     PromptInputTextarea,
 } from "@/components/ui/prompt-input";
 import { createChat } from "@/lib/actions";
-import { cn } from "@/lib/utils";
+import { appendChatToLocalStorage, cn } from "@/lib/utils";
 import { ArrowUpIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,6 +41,7 @@ export function ChatLanding({ id }: ChatLandingProps) {
             try {
                 setIsLoading(input);
                 await createChat({ id, title: input });
+                appendChatToLocalStorage(id);
                 router.push(`/chat/${id}?${searchParams.toString()}`);
             } catch (error) {
                 console.error("Failed to create chat:", error);

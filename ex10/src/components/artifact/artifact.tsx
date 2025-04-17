@@ -76,7 +76,7 @@ export const Artifact = memo(({ code }: ArtifactProps) => {
             <div
                 className={cn(
                     "border-input shrink-0 gap-2 overflow-x-auto rounded-t-sm border border-b-0 p-2",
-                    value === "code" ? "flex" : "hidden"
+                    value === "code" && !!code.length ? "flex" : "hidden"
                 )}
             >
                 <ArtifactFileNames
@@ -91,7 +91,9 @@ export const Artifact = memo(({ code }: ArtifactProps) => {
             <div
                 className={cn(
                     "border-input h-full overflow-auto rounded-b-sm border shadow-xs",
-                    value === "code" ? "rounded-b-sm" : "rounded-sm"
+                    value === "code" && !!code.length
+                        ? "rounded-b-sm"
+                        : "rounded-sm"
                 )}
             >
                 <TabsContent
