@@ -50,6 +50,19 @@ export async function POST(request: Request) {
             });
         }
 
+        await saveMessages({
+            messages: [
+                {
+                    chatId: id,
+                    id: userMessage.id,
+                    role: "user",
+                    parts: userMessage.parts,
+                    attachments: userMessage.experimental_attachments ?? [],
+                    createdAt: new Date(),
+                },
+            ],
+        });
+
         return createDataStreamResponse({
             execute: (dataStream) => {
                 const result = streamText({
@@ -69,6 +82,7 @@ export async function POST(request: Request) {
                     },
                     onFinish: async ({ response }) => {
                         try {
+                            console.log("response", response);
                             const assistantId = response.messages
                                 .filter(
                                     (message) => message.role === "assistant"

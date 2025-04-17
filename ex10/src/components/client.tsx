@@ -70,8 +70,6 @@ export function Client({ id, initialMessages }: ClientProps) {
         },
     });
 
-    console.log("messages", messages);
-
     return (
         <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">
             <Chat
