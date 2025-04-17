@@ -37,9 +37,10 @@ const example: DeepPartial<FragmentSchema> = {
 };
 
 export default function Page() {
-    const [input, setInput] = useQueryState("suggestion", {
+    const [suggestion] = useQueryState("suggestion", {
         defaultValue: "",
     });
+    const [input, setInput] = useState<string>(suggestion);
     const [run] = useQueryState("run", parseAsBoolean.withDefault(false));
 
     const [messages, setMessages] = useState<ObjectMessage[]>([]);
