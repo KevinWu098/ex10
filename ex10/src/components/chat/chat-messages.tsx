@@ -2,11 +2,11 @@ import { memo, useRef } from "react";
 import { ChatMessage } from "@/components/chat/chat-message";
 import { ChatContainer } from "@/components/ui/chat-container";
 import { ScrollButton } from "@/components/ui/scroll-button";
-import { ObjectMessage } from "@/lib/message";
+import { UIMessage } from "ai";
 import { LoaderIcon } from "lucide-react";
 
 interface ChatMessagesProps {
-    messages: ObjectMessage[];
+    messages: UIMessage[];
     isLoading: boolean;
     // onDelete
     // onEdit
@@ -14,14 +14,14 @@ interface ChatMessagesProps {
 }
 
 export const ChatMessages = memo(
-    ({ messages: objectMessages, isLoading }: ChatMessagesProps) => {
-        console.log("hit");
-        const messages = objectMessages.map((message) => ({
-            id: crypto.randomUUID(),
-            role: message.role,
-            content: message.content.find((c) => c.type === "text")?.text || "",
-            experimental_attachments: [],
-        }));
+    ({ messages, isLoading }: ChatMessagesProps) => {
+        // console.log("hit");
+        // const messages = objectMessages.map((message) => ({
+        //     id: crypto.randomUUID(),
+        //     role: message.role,
+        //     content: message.content.find((c) => c.type === "text")?.text || "",
+        //     experimental_attachments: [],
+        // }));
 
         const initialMessageCount = useRef(messages.length);
         const scrollRef = useRef<HTMLDivElement>(null);
