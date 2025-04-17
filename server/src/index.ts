@@ -1,11 +1,10 @@
 import express from 'express';
-import { createServer } from 'http';
-import { createSession } from './controllers/sessionController';
-import { getSessionById } from './services/sessionService';
-import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
+import { createServer, ServerResponse } from 'http';
+import { createSession, terminateSession } from './controllers/sessionController';
+import { getSessionById, cleanupAllSessions } from './services/sessionService';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import { Socket } from 'net';
-import { IncomingMessage, ServerResponse } from 'http';
-import * as http from 'http';
+import { parse as parseUrl } from 'url';
 
 const app = express();
 const httpServer = createServer(app);
@@ -18,6 +17,7 @@ app.use(express.json());
 
 // Routes
 app.get('/createSession', createSession);
+app.delete('/session/:id', terminateSession);
 app.post('/updateCode', (req, res) => {
   // Placeholder for future implementation
   res.status(200).json({ message: 'updateCode endpoint placeholder' });
@@ -45,12 +45,12 @@ app.use('/session/:id', async (req, res, next) => {
     }
     
     // Create a proxy middleware if it doesn't exist for this session
-    // Make sure we only create one proxy per session so it doesn't have a stroke and create an insane amount of listeners
+    // Important: Set ws: false to disable automatic WebSocket handling
     if (!sessionProxies[id]) {
       sessionProxies[id] = createProxyMiddleware({
         target: `http://localhost:${session.xpraPort}`,
         changeOrigin: true,
-        ws: true,
+        ws: false, // Disable automatic WebSocket handling
         secure: false,
         pathRewrite: {
           [`^/session/${id}`]: ''
@@ -88,10 +88,65 @@ app.use('/session/:id', async (req, res, next) => {
   }
 });
 
+// Manually handle WebSocket upgrade events
+httpServer.on('upgrade', async (req, socket, head) => {
+  try {
+    const pathname = parseUrl(req.url || '').pathname || '';
+    const matches = pathname.match(/^\/session\/([^\/]+)/);
+    
+    if (!matches) {
+      socket.destroy();
+      return;
+    }
+    
+    const sessionId = matches[1];
+    
+    // Check if session exists
+    const session = await getSessionById(sessionId);
+    if (!session) {
+      console.error(`WebSocket upgrade: Session ${sessionId} not found`);
+      socket.destroy();
+      return;
+    }
+    
+    // Create proxy if it doesn't exist yet
+    if (!sessionProxies[sessionId]) {
+      console.error(`WebSocket upgrade: Proxy for session ${sessionId} not initialized yet`);
+      socket.destroy();
+      return;
+    }
+    
+    // Use the proxy's upgrade function to handle the WebSocket
+    console.log(`Upgrading WebSocket for session: ${sessionId}`);
+    sessionProxies[sessionId].upgrade(req, socket, head);
+    
+  } catch (error) {
+    console.error('WebSocket upgrade error:', error);
+    if (!socket.destroyed) {
+      socket.destroy();
+    }
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// Handle graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('Shutting down server...');
+  // Close HTTP server
+  httpServer.close();
+  // Cleanup will be handled by the handlers in sessionService.ts
+});
+
+process.on('SIGTERM', async () => {
+  console.log('Shutting down server...');
+  // Close HTTP server
+  httpServer.close();
+  // Cleanup will be handled by the handlers in sessionService.ts
 });
 
 export default app; 

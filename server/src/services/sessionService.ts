@@ -39,6 +39,13 @@ const allocatePort = (): number => {
 };
 
 /**
+ * Release a port back to the pool
+ */
+const releasePort = (port: number): void => {
+  usedPorts.delete(port);
+};
+
+/**
  * Create a new Linux user with restrictions
  */
 const createLinuxUser = async (username: string): Promise<void> => {
@@ -65,7 +72,8 @@ const createLinuxUser = async (username: string): Promise<void> => {
 const startXpraServer = async (username: string, port: number): Promise<void> => {
   try {
     // Command to start Xpra server with browser
-    const cmd = `sudo -u ${username} xpra start :100 --bind-tcp=0.0.0.0:${port} --start=chromium-browser --html=on`;
+    // We need --xvfb="Xvfb -nolisten unix -nolisten tcp" to avoid really annoying X11 forwarding issues with silent fails (especially on WSL)
+    const cmd = `sudo -u ${username} xpra start --bind-tcp=0.0.0.0:${port} --start=chromium-browser --html=on --xvfb="Xvfb -nolisten unix -nolisten tcp"`;
     
     await execAsync(cmd);
     
@@ -74,6 +82,75 @@ const startXpraServer = async (username: string, port: number): Promise<void> =>
     console.error(`Failed to start Xpra server for ${username}:`, error);
     throw error;
   }
+};
+
+/**
+ * Clean up a user session
+ */
+export const cleanupSession = async (sessionId: string): Promise<boolean> => {
+  const session = sessions[sessionId];
+  
+  if (!session) {
+    console.warn(`Session ${sessionId} not found for cleanup`);
+    return false;
+  }
+  
+  try {
+    const { username, xpraPort } = session;
+    
+    console.log(`Cleaning up session ${sessionId} for user ${username}`);
+    
+    // 1. Kill the Xpra server
+    try {
+      await execAsync(`sudo pkill -f "xpra.*${username}"`);
+      console.log(`Stopped Xpra server for ${username}`);
+    } catch (error) {
+      console.error(`Error stopping Xpra server for ${username}:`, error);
+    }
+    
+    // 2. Kill all processes for this user
+    try {
+      await execAsync(`sudo pkill -9 -u ${username}`);
+      console.log(`Killed all processes for user ${username}`);
+    } catch (error) {
+      console.error(`Error killing processes for ${username}:`, error);
+    }
+    
+    // 3. Delete the Linux user
+    try {
+      await execAsync(`sudo userdel -r ${username}`);
+      console.log(`Deleted Linux user ${username}`);
+    } catch (error) {
+      console.error(`Error deleting Linux user ${username}:`, error);
+    }
+    
+    // 4. Release the port
+    releasePort(xpraPort);
+    console.log(`Released port ${xpraPort}`);
+    
+    // 5. Remove the session from memory
+    delete sessions[sessionId];
+    
+    return true;
+  } catch (error) {
+    console.error(`Failed to clean up session ${sessionId}:`, error);
+    return false;
+  }
+};
+
+/**
+ * Clean up all active sessions
+ */
+export const cleanupAllSessions = async (): Promise<void> => {
+  console.log(`Cleaning up ${Object.keys(sessions).length} active sessions...`);
+  
+  const cleanupPromises = Object.keys(sessions).map(sessionId => 
+    cleanupSession(sessionId)
+  );
+  
+  await Promise.allSettled(cleanupPromises);
+  
+  console.log('All sessions cleaned up');
 };
 
 /**
@@ -120,4 +197,17 @@ export const createUserSession = async (): Promise<Session> => {
  */
 export const getSessionById = (id: string): Session | undefined => {
   return sessions[id];
-}; 
+};
+
+// Register process handlers to clean up sessions on exit
+process.on('SIGINT', async () => {
+  console.log('Received SIGINT, cleaning up sessions before exit...');
+  await cleanupAllSessions();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('Received SIGTERM, cleaning up sessions before exit...');
+  await cleanupAllSessions();
+  process.exit(0);
+}); 
