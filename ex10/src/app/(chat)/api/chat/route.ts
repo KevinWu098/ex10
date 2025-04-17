@@ -72,9 +72,15 @@ export async function POST(request: Request) {
                     ],
                     experimental_transform: smoothStream({ chunking: "word" }),
                     experimental_generateMessageId: generateUUID,
+                    toolCallStreaming: true,
                     tools: {
                         generateExtension: generateExtension(),
                         getPageContext,
+                    },
+                    onChunk: (chunk) => {
+                        // if (chunk.chunk.type === "tool-call-delta") {
+                        //     process.stdout.write(chunk.chunk.argsTextDelta);
+                        // }
                     },
                     onFinish: async ({ response }) => {
                         try {

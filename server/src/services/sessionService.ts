@@ -46,6 +46,59 @@ const releasePort = (port: number): void => {
 };
 
 /**
+ * Configure comprehensive network restrictions for a user
+ */
+const configureNetworkRestrictions = async (username: string, xpraPort: number): Promise<void> => {
+  try {
+    // Create user-specific chain for outbound traffic
+    await execAsync(`sudo iptables -N USER_${username}_OUT`);
+    
+    // --- OUTBOUND TRAFFIC RULES ---
+    
+    // Allow connections to their own Xpra port (for client connection)
+    await execAsync(`sudo iptables -A USER_${username}_OUT -p tcp --dport ${xpraPort} -j ACCEPT`);
+    
+    // Allow outbound DNS
+    await execAsync(`sudo iptables -A USER_${username}_OUT -p udp --dport 53 -j ACCEPT`);
+    
+    // Allow outbound HTTP/HTTPS (for browser functionality)
+    await execAsync(`sudo iptables -A USER_${username}_OUT -p tcp --dport 80 -j ACCEPT`);
+    await execAsync(`sudo iptables -A USER_${username}_OUT -p tcp --dport 443 -j ACCEPT`);
+    
+    // Block access to all other Xpra ports
+    await execAsync(`sudo iptables -A USER_${username}_OUT -p tcp --match multiport --dports 9000:9100 -j REJECT`);
+    
+    // --- APPLY CHAINS TO USER TRAFFIC ---
+    
+    // Apply outbound chain to the user's outgoing traffic (owner match works in OUTPUT)
+    await execAsync(`sudo iptables -A OUTPUT -m owner --uid-owner ${username} -j USER_${username}_OUT`);
+    
+    console.log(`Configured network restrictions for ${username} with access to port ${xpraPort}`);
+  } catch (error) {
+    console.error(`Failed to configure network restrictions for ${username}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Clean up network restrictions for a user
+ */
+const cleanupNetworkRestrictions = async (username: string): Promise<void> => {
+  try {
+    // Remove the referencing rule
+    await execAsync(`sudo iptables -D OUTPUT -m owner --uid-owner ${username} -j USER_${username}_OUT 2>/dev/null || true`);
+    
+    // Flush and delete the chain
+    await execAsync(`sudo iptables -F USER_${username}_OUT 2>/dev/null || true`);
+    await execAsync(`sudo iptables -X USER_${username}_OUT 2>/dev/null || true`);
+    
+    console.log(`Cleaned up network restrictions for ${username}`);
+  } catch (error) {
+    console.error(`Error cleaning up network restrictions for ${username}:`, error);
+  }
+};
+
+/**
  * Create a new Linux user with restrictions
  */
 const createLinuxUser = async (username: string): Promise<void> => {
@@ -71,6 +124,9 @@ const createLinuxUser = async (username: string): Promise<void> => {
  */
 const startXpraServer = async (username: string, port: number): Promise<void> => {
   try {
+    // Configure network restrictions for the user
+    await configureNetworkRestrictions(username, port);
+    
     // Command to start Xpra server with browser
     // We need --xvfb="Xvfb -nolisten unix -nolisten tcp" to avoid really annoying X11 forwarding issues with silent fails (especially on WSL)
     const cmd = `sudo -u ${username} xpra start --bind-tcp=0.0.0.0:${port} --start=chromium-browser --html=on --xvfb="Xvfb -nolisten unix -nolisten tcp"`;
@@ -102,7 +158,8 @@ export const cleanupSession = async (sessionId: string): Promise<boolean> => {
     
     // 1. Kill the Xpra server
     try {
-      await execAsync(`sudo pkill -f "xpra.*${username}"`);
+      // Add the "|| true" to make the command succeed even if no processes are found
+      await execAsync(`sudo pkill -f "xpra.*${username}" || true`);
       console.log(`Stopped Xpra server for ${username}`);
     } catch (error) {
       console.error(`Error stopping Xpra server for ${username}:`, error);
@@ -110,13 +167,21 @@ export const cleanupSession = async (sessionId: string): Promise<boolean> => {
     
     // 2. Kill all processes for this user
     try {
-      await execAsync(`sudo pkill -9 -u ${username}`);
+      // Add the "|| true" to make the command succeed even if no processes are found
+      await execAsync(`sudo pkill -9 -u ${username} || true`);
       console.log(`Killed all processes for user ${username}`);
     } catch (error) {
       console.error(`Error killing processes for ${username}:`, error);
     }
     
-    // 3. Delete the Linux user
+    // 3. Clean up network restrictions
+    try {
+      await cleanupNetworkRestrictions(username);
+    } catch (error) {
+      console.error(`Error cleaning up network restrictions for ${username}:`, error);
+    }
+    
+    // 4. Delete the Linux user
     try {
       await execAsync(`sudo userdel -r ${username}`);
       console.log(`Deleted Linux user ${username}`);
@@ -124,11 +189,11 @@ export const cleanupSession = async (sessionId: string): Promise<boolean> => {
       console.error(`Error deleting Linux user ${username}:`, error);
     }
     
-    // 4. Release the port
+    // 5. Release the port
     releasePort(xpraPort);
     console.log(`Released port ${xpraPort}`);
     
-    // 5. Remove the session from memory
+    // 6. Remove the session from memory
     delete sessions[sessionId];
     
     return true;
