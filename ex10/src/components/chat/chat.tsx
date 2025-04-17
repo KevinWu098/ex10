@@ -2,11 +2,12 @@
 
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessages } from "@/components/chat/chat-messages";
-import { ObjectMessage } from "@/lib/message";
+import { UIMessage } from "ai";
+import { UseChatHelpers } from "ai/react";
 
 interface ChatProps {
-    messages: ObjectMessage[];
-    isLoading: boolean;
+    messages: UIMessage[];
+    status: UseChatHelpers["status"];
     input: string;
     onValueChange: (value: string) => void;
     onSubmit: () => void;
@@ -15,12 +16,13 @@ interface ChatProps {
 
 export function Chat({
     messages,
-    isLoading,
+    status,
     input,
     onStop,
     onValueChange,
     onSubmit,
 }: ChatProps) {
+    const isLoading = status === "streaming" || status === "submitted";
     return (
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
             <ChatMessages
