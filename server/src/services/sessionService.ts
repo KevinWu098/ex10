@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { randomBytes } from 'crypto';
 import { Session } from '../types/session';
+import * as net from 'net';
 
 const execAsync = promisify(exec);
 
@@ -10,7 +11,7 @@ const sessions: Record<string, Session> = {};
 
 // Port range for Xpra servers
 const MIN_PORT = 9000;
-const MAX_PORT = 9100;
+const MAX_PORT = 9500;
 const usedPorts = new Set<number>();
 
 /**
@@ -22,20 +23,54 @@ const generateUsername = (prefix: string = 'ex10_user_'): string => {
 };
 
 /**
+ * Check if a port is in use
+ */
+const isPortInUse = (port: number): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    
+    server.once('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+      server.close();
+    });
+    
+    server.once('listening', () => {
+      server.close();
+      resolve(false);
+    });
+    
+    server.listen(port, '0.0.0.0');
+  });
+};
+
+/**
  * Allocate a free port for Xpra
  */
-const allocatePort = (): number => {
-  let port = MIN_PORT;
-  while (usedPorts.has(port) && port <= MAX_PORT) {
-    port++;
+const allocatePort = async (): Promise<number> => {
+  for (let port = MIN_PORT; port <= MAX_PORT; port++) {
+    // Skip already tracked ports
+    if (usedPorts.has(port)) {
+      continue;
+    }
+    
+    // Check if the port is actually in use on the system
+    const inUse = await isPortInUse(port);
+    if (!inUse) {
+      usedPorts.add(port);
+      console.log(`Allocated port ${port}`);
+      return port;
+    } else {
+      console.log(`Port ${port} is already in use, skipping`);
+      // Mark the port as used in our tracking
+      usedPorts.add(port);
+    }
   }
   
-  if (port > MAX_PORT) {
-    throw new Error('No available ports for Xpra server');
-  }
-  
-  usedPorts.add(port);
-  return port;
+  throw new Error('No available ports for Xpra server');
 };
 
 /**
@@ -66,7 +101,7 @@ const configureNetworkRestrictions = async (username: string, xpraPort: number):
     await execAsync(`sudo iptables -A USER_${username}_OUT -p tcp --dport 443 -j ACCEPT`);
     
     // Block access to all other Xpra ports
-    await execAsync(`sudo iptables -A USER_${username}_OUT -p tcp --match multiport --dports 9000:9100 -j REJECT`);
+    await execAsync(`sudo iptables -A USER_${username}_OUT -p tcp --match multiport --dports 9000:9500 -j REJECT`);
     
     // --- APPLY CHAINS TO USER TRAFFIC ---
     
@@ -235,7 +270,7 @@ export const createUserSession = async (): Promise<Session> => {
   
   // Generate username and allocate port
   const username = generateUsername();
-  const xpraPort = allocatePort();
+  const xpraPort = await allocatePort();
   
   // Create Linux user
   await createLinuxUser(username);
