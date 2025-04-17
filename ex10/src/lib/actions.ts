@@ -1,9 +1,11 @@
 "use server";
 
-import { Chat } from "@/db/schema";
-import { getChatById, saveChat } from "@/lib/queries";
+import db from "@/db";
+import { Chat, message } from "@/db/schema";
+import { getChatById, getMessageById, saveChat } from "@/lib/queries";
 import { openai } from "@ai-sdk/openai";
 import { generateText, Message } from "ai";
+import { and, eq, gte, inArray } from "drizzle-orm";
 
 export async function generateTitleFromUserMessage({
     message,
@@ -50,6 +52,57 @@ export async function getChatsById({
         return chats.filter((c) => c !== null && c !== undefined);
     } catch (error) {
         console.error("Failed to get chats by ids");
+        throw error;
+    }
+}
+
+export async function deleteTrailingMessages({ id }: { id: string }) {
+    const [message] = await getMessageById({ id });
+
+    if (!message) {
+        return;
+    }
+
+    await deleteMessagesByChatIdAfterTimestamp({
+        chatId: message.chatId,
+        timestamp: message.createdAt,
+    });
+}
+
+export async function deleteMessagesByChatIdAfterTimestamp({
+    chatId,
+    timestamp,
+}: {
+    chatId: string;
+    timestamp: Date;
+}) {
+    try {
+        const messagesToDelete = await db
+            .select({ id: message.id })
+            .from(message)
+            .where(
+                and(
+                    eq(message.chatId, chatId),
+                    gte(message.createdAt, timestamp)
+                )
+            );
+
+        const messageIds = messagesToDelete.map((message) => message.id);
+
+        if (messageIds.length > 0) {
+            return await db
+                .delete(message)
+                .where(
+                    and(
+                        eq(message.chatId, chatId),
+                        inArray(message.id, messageIds)
+                    )
+                );
+        }
+    } catch (error) {
+        console.error(
+            "Failed to delete messages by id after timestamp from database"
+        );
         throw error;
     }
 }

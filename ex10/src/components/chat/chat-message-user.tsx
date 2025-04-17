@@ -16,9 +16,10 @@ import {
     Message as MessageContainer,
     MessageContent,
 } from "@/components/ui/message";
+import { deleteTrailingMessages } from "@/lib/actions";
 import { cn } from "@/lib/utils";
-import { Message as MessageType } from "@ai-sdk/react";
-import { Check, Copy, Trash2 } from "lucide-react";
+import { Message, Message as MessageType, UseChatHelpers } from "@ai-sdk/react";
+import { Check, Copy, Pencil, RotateCwIcon } from "lucide-react";
 
 // const getTextFromDataUrl = (dataUrl: string) => {
 //     const base64 = dataUrl.split(",")[1];
@@ -26,6 +27,7 @@ import { Check, Copy, Trash2 } from "lucide-react";
 // };
 
 export type MessageUserProps = {
+    message: Message;
     hasScrollAnchor?: boolean;
     attachments?: MessageType["experimental_attachments"];
     children: string;
@@ -35,9 +37,12 @@ export type MessageUserProps = {
     // onReload: () => void;
     // onDelete: (id: string) => void;
     id: string;
+    setMessages: UseChatHelpers["setMessages"];
+    reload: UseChatHelpers["reload"];
 };
 
 export function ChatMessageUser({
+    message,
     hasScrollAnchor,
     attachments: _attachments,
     children,
@@ -46,27 +51,61 @@ export function ChatMessageUser({
     // onEdit,
     // onReload,
     // onDelete,
-    id: _id,
+    setMessages,
+    id: id,
+    reload,
 }: MessageUserProps) {
     const [editInput, setEditInput] = useState(children);
     const [isEditing, setIsEditing] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleEditCancel = () => {
         setIsEditing(false);
         setEditInput(children);
     };
 
-    const handleSave = () => {
-        // if (onEdit) {
-        //     onEdit(id, editInput);
-        // }
-        // onReload();
+    const handleSave = async () => {
         setIsEditing(false);
+        setIsSubmitting(true);
+
+        await deleteTrailingMessages({ id });
+
+        // @ts-expect-error todo: support UIMessage in setMessages
+        setMessages((messages) => {
+            const index = messages.findIndex((m) => m.id === id);
+
+            if (index !== -1) {
+                const updatedMessage = {
+                    ...message,
+                    content: editInput,
+                    parts: [{ type: "text", text: editInput }],
+                };
+
+                return [...messages.slice(0, index), updatedMessage];
+            }
+
+            return messages;
+        });
+
+        setIsSubmitting(false);
+        reload();
     };
 
-    const handleDelete = () => {
-        // onDelete(id);
+    const handleReload = async () => {
+        await deleteTrailingMessages({ id });
+
+        setMessages((messages) => {
+            const index = messages.findIndex((m) => m.id === id);
+
+            if (index !== -1) {
+                return [...messages.slice(0, index + 1)];
+            }
+
+            return messages;
+        });
+
+        reload();
     };
 
     return (
@@ -149,6 +188,7 @@ export function ChatMessageUser({
                         <Button
                             size="sm"
                             onClick={handleSave}
+                            disabled={isSubmitting}
                         >
                             Save
                         </Button>
@@ -182,33 +222,32 @@ export function ChatMessageUser({
                         )}
                     </button>
                 </MessageAction>
-                {/* @todo: add when ready */}
-                {/* <MessageAction
-          tooltip={isEditing ? "Save" : "Edit"}
-          side="bottom"
-          delayDuration={0}
-        >
-          <button
-            className="flex items-center justify-center w-8 h-8 transition bg-transparent rounded-full"
-            aria-label="Edit"
-            onClick={() => setIsEditing(!isEditing)}
-            type="button"
-          >
-            <Pencil className="size-4" />
-          </button>
-        </MessageAction> */}
                 <MessageAction
-                    tooltip="Delete"
+                    tooltip={isEditing ? "Save" : "Edit"}
                     side="bottom"
                     delayDuration={0}
                 >
                     <button
                         className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent transition"
-                        aria-label="Delete"
-                        onClick={handleDelete}
+                        aria-label="Edit"
+                        onClick={() => setIsEditing(!isEditing)}
                         type="button"
                     >
-                        <Trash2 className="size-4" />
+                        <Pencil className="size-4" />
+                    </button>
+                </MessageAction>
+                <MessageAction
+                    tooltip="Regenerate"
+                    side="bottom"
+                    delayDuration={0}
+                >
+                    <button
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent transition"
+                        aria-label="Regenerate"
+                        onClick={handleReload}
+                        type="button"
+                    >
+                        <RotateCwIcon className="size-4" />
                     </button>
                 </MessageAction>
             </MessageActions>

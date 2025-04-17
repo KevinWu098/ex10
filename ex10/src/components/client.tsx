@@ -123,6 +123,8 @@ export function Client({ id, initialMessages }: ClientProps) {
                 onStop={stop}
                 onValueChange={setInput}
                 onSubmit={handleSubmit}
+                reload={reload}
+                setMessages={setMessages}
             />
 
             <Artifact

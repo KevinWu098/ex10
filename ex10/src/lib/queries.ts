@@ -64,3 +64,12 @@ export async function getMessagesByChatId({ id }: { id: string }) {
         throw error;
     }
 }
+
+export async function getMessageById({ id }: { id: string }) {
+    try {
+        return await db.select().from(message).where(eq(message.id, id));
+    } catch (error) {
+        console.error("Failed to get message by id from database");
+        throw error;
+    }
+}

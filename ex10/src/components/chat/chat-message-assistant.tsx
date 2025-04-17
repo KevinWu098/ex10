@@ -4,7 +4,9 @@ import {
     MessageActions,
     MessageContent,
 } from "@/components/ui/message";
+import { deleteTrailingMessages } from "@/lib/actions";
 import { cn } from "@/lib/utils";
+import { UseChatHelpers } from "@ai-sdk/react";
 import { CheckIcon, CopyIcon, RotateCwIcon } from "lucide-react";
 
 type MessageAssistantProps = {
@@ -13,7 +15,9 @@ type MessageAssistantProps = {
     hasScrollAnchor?: boolean;
     copied?: boolean;
     copyToClipboard?: () => void;
-    onReload?: () => void;
+    reload: UseChatHelpers["reload"];
+    setMessages: UseChatHelpers["setMessages"];
+    id: string;
 };
 
 export function ChatMessageAssistant({
@@ -22,7 +26,9 @@ export function ChatMessageAssistant({
     hasScrollAnchor,
     copied,
     copyToClipboard,
-    onReload,
+    reload: _reload,
+    setMessages: _setMessages,
+    id: _id,
 }: MessageAssistantProps) {
     return (
         <Message
@@ -67,7 +73,7 @@ export function ChatMessageAssistant({
                             )}
                         </button>
                     </MessageAction>
-                    <MessageAction
+                    {/* <MessageAction
                         tooltip="Regenerate"
                         side="bottom"
                         delayDuration={0}
@@ -75,12 +81,12 @@ export function ChatMessageAssistant({
                         <button
                             className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent transition"
                             aria-label="Regenerate"
-                            onClick={onReload}
+                            onClick={handleReload}
                             type="button"
                         >
                             <RotateCwIcon className="size-4" />
                         </button>
-                    </MessageAction>
+                    </MessageAction> */}
                 </MessageActions>
             </div>
         </Message>
