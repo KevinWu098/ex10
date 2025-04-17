@@ -1,5 +1,4 @@
 import { memo, useRef } from "react";
-import { ChatMessage } from "@/components/chat/chat-message";
 import { ChatMessageParts } from "@/components/chat/chat-message-parts";
 import { ChatContainer } from "@/components/ui/chat-container";
 import { ScrollButton } from "@/components/ui/scroll-button";

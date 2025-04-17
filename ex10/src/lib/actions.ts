@@ -1,5 +1,6 @@
 "use server";
 
+import { saveChat } from "@/lib/queries";
 import { openai } from "@ai-sdk/openai";
 import { generateText, Message } from "ai";
 
@@ -19,4 +20,11 @@ export async function generateTitleFromUserMessage({
     });
 
     return title;
+}
+
+export async function createChat({ id, title }: { id: string; title: string }) {
+    await saveChat({
+        id,
+        title,
+    });
 }

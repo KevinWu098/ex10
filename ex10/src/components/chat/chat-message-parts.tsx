@@ -1,5 +1,4 @@
 import { ChatMessage } from "@/components/chat/chat-message";
-import { Button } from "@/components/ui/button";
 import { Message } from "@ai-sdk/react";
 import { UIMessage } from "ai";
 

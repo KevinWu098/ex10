@@ -24,14 +24,14 @@ export async function saveChat({
 }: {
     id: string;
     // userId: string;
-    title: string;
+    title: string | undefined;
 }) {
     try {
         return await db.insert(chat).values({
             id,
             createdAt: new Date(),
             // userId,
-            title,
+            title: title ?? "New Chat",
         });
     } catch (error) {
         console.error("Failed to save chat in database");

@@ -1,13 +1,9 @@
+import { generateExtension } from "@/app/(chat)/api/chat/generateExtension";
 import { getPageContext } from "@/app/(chat)/api/chat/getPageContext";
-import { generateExtension } from "@/app/(chat)/api/chat/streamObject";
 import { generateTitleFromUserMessage } from "@/lib/actions";
 import { getChatById, saveChat, saveMessages } from "@/lib/queries";
 import { SYSTEM_PROMPT } from "@/lib/system";
-import {
-    generateUUID,
-    getMostRecentUserMessage,
-    getTrailingMessageId,
-} from "@/lib/utils";
+import { generateUUID, getMostRecentUserMessage } from "@/lib/utils";
 import { openai } from "@ai-sdk/openai";
 import {
     appendResponseMessages,
@@ -82,7 +78,6 @@ export async function POST(request: Request) {
                     },
                     onFinish: async ({ response }) => {
                         try {
-                            console.log("response", response);
                             const assistantId = response.messages
                                 .filter(
                                     (message) => message.role === "assistant"
@@ -134,7 +129,7 @@ export async function POST(request: Request) {
                 return "Oops, an error occurred!";
             },
         });
-    } catch (error) {
+    } catch {
         return new Response(
             "An error occurred while processing your request!",
             {

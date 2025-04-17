@@ -10,12 +10,20 @@ import {
     PromptInputActions,
     PromptInputTextarea,
 } from "@/components/ui/prompt-input";
+import { createChat } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 import { ArrowUpIcon } from "lucide-react";
+import { toast } from "sonner";
 
-export function ChatLanding() {
+interface ChatLandingProps {
+    id: string;
+}
+
+export function ChatLanding({ id }: ChatLandingProps) {
     const router = useRouter();
     const [value, setValue] = useState("");
+    // NB: To differentiate which suggestion is being loaded, we use the (truthy) input value as the loading state
+    const [isLoading, setIsLoading] = useState<string | undefined>();
 
     const isDisabled = value.length === 0;
 
@@ -23,18 +31,30 @@ export function ChatLanding() {
         setValue(value);
     }, []);
 
-    const handleClick = useCallback(() => {
-        handleSubmit();
-    }, []);
+    const handleSubmit = useCallback(
+        async (suggestion?: string) => {
+            const input = suggestion ?? value;
 
-    const handleSubmit = useCallback((suggestion?: string) => {
-        const input = suggestion ?? value;
-        const searchParams = new URLSearchParams();
-        searchParams.set("suggestion", input);
-        searchParams.set("run", "true");
+            const searchParams = new URLSearchParams();
+            searchParams.set("initialInput", input);
 
-        router.push(`/chat/abc?${searchParams.toString()}`);
-    }, []);
+            try {
+                setIsLoading(input);
+                await createChat({ id, title: input });
+                router.push(`/chat/${id}?${searchParams.toString()}`);
+            } catch (error) {
+                console.error("Failed to create chat:", error);
+                toast.error("Failed to create chat");
+            } finally {
+                setIsLoading(undefined);
+            }
+        },
+        [id, router, value]
+    );
+
+    const handleClick = useCallback(async () => {
+        await handleSubmit();
+    }, [handleSubmit]);
 
     return (
         <div className="flex w-full flex-col items-center gap-8 pt-32 md:pt-48">
@@ -75,6 +95,7 @@ export function ChatLanding() {
                         "Open Github PR links in new tabs",
                     ]}
                     setInputValue={handleSubmit}
+                    isLoading={isLoading}
                 />
             </div>
         </div>

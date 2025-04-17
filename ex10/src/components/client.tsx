@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Artifact } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
 import { type FragmentSchema } from "@/lib/schema";
@@ -37,8 +37,7 @@ interface ClientProps {
 }
 
 export function Client({ id, initialMessages }: ClientProps) {
-    const [suggestion] = useQueryState("suggestion", { defaultValue: "" });
-    const [run] = useQueryState("run", parseAsBoolean.withDefault(false));
+    const [initialInput] = useQueryState("initialInput", { defaultValue: "" });
 
     const [fragment, setFragment] = useState<DeepPartial<FragmentSchema>>();
 
@@ -56,6 +55,7 @@ export function Client({ id, initialMessages }: ClientProps) {
     } = useChat({
         id,
         body: { id },
+        initialInput,
         initialMessages,
         experimental_throttle: 100,
         sendExtraMessageFields: true,
@@ -69,6 +69,15 @@ export function Client({ id, initialMessages }: ClientProps) {
             console.log("onFinish", message);
         },
     });
+
+    // ! this is a hack
+    const initialRender = useRef(true);
+    useEffect(() => {
+        if (initialInput && !initialMessages?.length && initialRender.current) {
+            handleSubmit();
+            initialRender.current = false;
+        }
+    }, [initialInput, handleSubmit]);
 
     return (
         <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">
