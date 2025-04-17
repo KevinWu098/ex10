@@ -3,6 +3,8 @@ import { Request, Response } from 'express';
 import { createUserSession, cleanupSession, getSessionById } from '../services/sessionService';
 import { promisify } from 'util';
 import { json } from 'stream/consumers';
+import path from 'path';
+import fs from 'fs';
 
 const execAsync = promisify(exec);
 
@@ -158,6 +160,75 @@ export const terminateSession = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to terminate session',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Update code in the extension directory
+ * 
+ * Query params:
+ * sessionId: the id of the session
+ * filePath: the path to the file to update
+ * content: the content to update the file with
+ */
+export const updateCode = async (req: Request, res: Response) => {
+  try {
+    const { sessionId, filePath, content } = req.body;
+    
+    // Validate required fields
+    if (!sessionId || !filePath || content === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: sessionId, filePath, or content'
+      });
+    }
+    
+    // Check if session exists
+    const session = getSessionById(sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: 'Session not found'
+      });
+    }
+    
+    // Normalize and validate the file path to prevent directory traversal
+    let normalizedPath = path.normalize(filePath).replace(/^\/+/, '');
+    
+    // Ensure the path doesn't try to escape the extension directory
+    if (normalizedPath.includes('..') || normalizedPath.startsWith('/') || normalizedPath.startsWith('\\')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file path'
+      });
+    }
+    
+    // Get the full path to the file
+    const fullPath = path.join(`/home/${session.username}/extension`, normalizedPath);
+    
+    // Check if the file exists before writing
+    const fileExists = await fs.promises.access(fullPath)
+      .then(() => true)
+      .catch(() => false);
+    
+    // Write the file
+    await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+    await fs.promises.writeFile(fullPath, content);
+    
+    // Change ownership to the session user
+    await execAsync(`chown ${session.username}:${session.username} "${fullPath}"`);
+    
+    return res.status(200).json({
+      success: true,
+      message: `File ${fileExists ? 'updated' : 'created'} successfully`,
+    });
+  } catch (error: any) {
+    console.error('Error updating code:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update code',
       error: error.message
     });
   }

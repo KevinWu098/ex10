@@ -1,6 +1,6 @@
 import express from 'express';
 import { createServer, ServerResponse } from 'http';
-import { createSession, terminateSession } from './controllers/sessionController';
+import { createSession, terminateSession, updateCode } from './controllers/sessionController';
 import { getSessionById, cleanupAllSessions } from './services/sessionService';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { Socket } from 'net';
@@ -19,10 +19,7 @@ app.use(express.json());
 // Routes
 app.get('/createSession', createSession);
 app.delete('/session/:id', terminateSession);
-app.post('/updateCode', (req, res) => {
-  // Placeholder for future implementation
-  res.status(200).json({ message: 'updateCode endpoint placeholder' });
-});
+app.post('/updateCode', updateCode);
 
 // store session proxies for each session id so we don't recreate them on each request
 const sessionProxies: Record<string, any> = {};
