@@ -10,10 +10,10 @@ import { cn } from "@/lib/utils";
 import { DeepPartial } from "ai";
 
 function formatFileContent(
-    fragment: DeepPartial<FragmentSchema> | undefined,
+    code: DeepPartial<FragmentSchema>["code"] | undefined,
     currentFile: string
 ): string | undefined {
-    const content = fragment?.code?.find(
+    const content = code?.find(
         (c) => c?.file_name === currentFile
     )?.file_content;
 
@@ -22,25 +22,25 @@ function formatFileContent(
 }
 
 interface ArtifactProps {
-    fragment: DeepPartial<FragmentSchema> | undefined;
+    code: DeepPartial<FragmentSchema>["code"] | undefined;
 }
 
-export const Artifact = memo(({ fragment }: ArtifactProps) => {
+export const Artifact = memo(({ code }: ArtifactProps) => {
     const [value, setValue] = useState("code");
     const [currentFile, setCurrentFile] = useState<string>("");
 
-    const content = formatFileContent(fragment, currentFile);
+    const content = formatFileContent(code, currentFile);
 
     // ! This is a hack.
     useEffect(() => {
-        const firstFileName = fragment?.code?.at(0)?.file_name;
+        const firstFileName = code?.at(0)?.file_name;
 
         if (firstFileName && !currentFile) {
             setCurrentFile(firstFileName);
         }
-    }, [fragment?.code, currentFile]);
+    }, [code, currentFile]);
 
-    if (!fragment) {
+    if (!code) {
         return null;
     }
 
@@ -68,8 +68,8 @@ export const Artifact = memo(({ fragment }: ArtifactProps) => {
                 </TabsList>
 
                 <DownloadZip
-                    extensionName={fragment?.extension_name}
-                    code={fragment?.code}
+                    extensionName={undefined} // TODO: pass in the extension name
+                    code={code}
                 />
             </div>
 
@@ -80,7 +80,7 @@ export const Artifact = memo(({ fragment }: ArtifactProps) => {
                 )}
             >
                 <ArtifactFileNames
-                    code={fragment?.code}
+                    code={code}
                     currentFile={currentFile}
                     setCurrentFile={setCurrentFile}
                 />

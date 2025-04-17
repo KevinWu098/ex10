@@ -39,6 +39,7 @@ export default function RootLayout({
                     attribute="class"
                     defaultTheme="light"
                     forcedTheme="light"
+                    themes={["light"]}
                     enableSystem
                 >
                     <NuqsAdapter>

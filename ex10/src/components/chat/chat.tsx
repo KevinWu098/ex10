@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessages } from "@/components/chat/chat-messages";
 import { UIMessage } from "ai";
@@ -14,31 +15,35 @@ interface ChatProps {
     onStop: () => void;
 }
 
-export function Chat({
-    messages,
-    status,
-    input,
-    onStop,
-    onValueChange,
-    onSubmit,
-}: ChatProps) {
-    const isLoading = status === "streaming" || status === "submitted";
+export const Chat = memo(
+    ({
+        messages,
+        status,
+        input,
+        onStop,
+        onValueChange,
+        onSubmit,
+    }: ChatProps) => {
+        const isLoading = status === "streaming" || status === "submitted";
 
-    return (
-        <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
-            <ChatMessages
-                messages={messages}
-                isLoading={isLoading}
-            />
+        return (
+            <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
+                <ChatMessages
+                    messages={messages}
+                    isLoading={isLoading}
+                />
 
-            <ChatInput
-                input={input}
-                isLoading={isLoading}
-                handleStop={onStop}
-                handleValueChange={onValueChange}
-                handleSubmit={onSubmit}
-                className="mt-auto w-full"
-            />
-        </div>
-    );
-}
+                <ChatInput
+                    input={input}
+                    isLoading={isLoading}
+                    handleStop={onStop}
+                    handleValueChange={onValueChange}
+                    handleSubmit={onSubmit}
+                    className="mt-auto w-full"
+                />
+            </div>
+        );
+    }
+);
+
+Chat.displayName = "Chat";

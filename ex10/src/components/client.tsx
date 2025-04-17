@@ -6,8 +6,8 @@ import { Chat } from "@/components/chat/chat";
 import { type FragmentSchema } from "@/lib/schema";
 import { generateUUID } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
-import { DeepPartial, UIMessage } from "ai";
-import { parseAsBoolean, useQueryState } from "nuqs";
+import { DeepPartial, ToolInvocation, UIMessage } from "ai";
+import { useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 const example: DeepPartial<FragmentSchema> = {
@@ -31,6 +31,14 @@ const example: DeepPartial<FragmentSchema> = {
     ],
 };
 
+type ToolInvocationUIPart = {
+    type: "tool-invocation";
+    /**
+     * The tool invocation.
+     */
+    toolInvocation: ToolInvocation;
+};
+
 interface ClientProps {
     id: string;
     initialMessages?: Array<UIMessage>;
@@ -39,7 +47,8 @@ interface ClientProps {
 export function Client({ id, initialMessages }: ClientProps) {
     const [initialInput] = useQueryState("initialInput", { defaultValue: "" });
 
-    const [fragment, setFragment] = useState<DeepPartial<FragmentSchema>>();
+    const [fragment, setFragment] =
+        useState<DeepPartial<FragmentSchema>["code"]>();
 
     const {
         messages,
@@ -70,6 +79,30 @@ export function Client({ id, initialMessages }: ClientProps) {
         },
     });
 
+    const lastMessage = messages.at(-1);
+
+    useEffect(() => {
+        const flattenedArgs = lastMessage?.parts
+            .filter(
+                (part) =>
+                    part.type === "tool-invocation" && part.toolInvocation?.args
+            )
+            .flatMap((part) => {
+                const args = (part as ToolInvocationUIPart).toolInvocation.args;
+
+                const code = args.code;
+
+                return code;
+            })
+            .filter(Boolean);
+
+        if (!flattenedArgs?.length) {
+            return;
+        }
+
+        setFragment(flattenedArgs);
+    }, [messages, lastMessage]);
+
     // ! this is a hack
     const initialRender = useRef(true);
     useEffect(() => {
@@ -90,7 +123,7 @@ export function Client({ id, initialMessages }: ClientProps) {
                 onSubmit={handleSubmit}
             />
 
-            <Artifact fragment={fragment} />
+            <Artifact code={fragment} />
         </div>
     );
 }
