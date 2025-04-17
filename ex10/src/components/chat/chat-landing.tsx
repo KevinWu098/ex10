@@ -93,6 +93,7 @@ export function ChatLanding({ id }: ChatLandingProps) {
                     suggestions={[
                         "Add WHOIS information to Vercel Domains search",
                         "Open Github PR links in new tabs",
+                        "Make the page background red",
                     ]}
                     setInputValue={handleSubmit}
                     isLoading={isLoading}

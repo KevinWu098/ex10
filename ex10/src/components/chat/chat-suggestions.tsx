@@ -12,7 +12,7 @@ export function ChatSuggestions({
     isLoading,
 }: ChatSuggestionsProps) {
     return (
-        <div className="flex flex-wrap justify-center-safe gap-2">
+        <div className="flex flex-wrap gap-2">
             {suggestions.map((suggestion) => (
                 <ChatSuggestion
                     key={suggestion}

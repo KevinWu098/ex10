@@ -22,7 +22,7 @@ export function ChatSuggestion({
     return (
         <PromptSuggestion
             onClick={handleClick}
-            className="rounded-full font-normal"
+            className="w-fit shrink-0 rounded-full font-normal"
             disabled={!!isLoading}
         >
             {suggestion}
