@@ -55,7 +55,7 @@ export function Client({ id, initialMessages }: ClientProps) {
     } = useChat({
         id,
         body: { id },
-        initialInput,
+        initialInput: !initialMessages?.length ? initialInput : "",
         initialMessages,
         experimental_throttle: 100,
         sendExtraMessageFields: true,
@@ -77,7 +77,7 @@ export function Client({ id, initialMessages }: ClientProps) {
             handleSubmit();
             initialRender.current = false;
         }
-    }, [initialInput, handleSubmit]);
+    }, [initialInput, handleSubmit, initialMessages?.length]);
 
     return (
         <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">
