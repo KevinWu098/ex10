@@ -6,7 +6,7 @@ import { Chat } from "@/components/chat/chat";
 import { type FragmentSchema } from "@/lib/schema";
 import { generateUUID } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
-import { DeepPartial, ToolInvocation, UIMessage } from "ai";
+import { DeepPartial, Message, ToolInvocation, UIMessage } from "ai";
 import { useQueryState } from "nuqs";
 import { toast } from "sonner";
 
@@ -25,6 +25,9 @@ interface ClientProps {
 
 export function Client({ id, initialMessages }: ClientProps) {
     const [initialInput] = useQueryState("initialInput", { defaultValue: "" });
+    const [isPreviewLoading, setIsPreviewLoading] = useState(true);
+    const [currentPreview, setCurrentPreview] = useState<string>();
+    const [currentTab, setCurrentTab] = useState("code");
 
     const {
         messages,
@@ -50,14 +53,31 @@ export function Client({ id, initialMessages }: ClientProps) {
             console.error("Error in chat:", error);
             toast.error("An error occurred: " + error?.message);
         },
-        onFinish: (message) => {
+        onFinish: async (message) => {
             console.log("onFinish", message);
+
+            setIsPreviewLoading(true);
+
+            // const response = await fetch("/api/sandbox", {
+            //     method: "POST",
+            //     body: JSON.stringify({
+            //         id,
+            //         code: extractCodeFromMessage(message),
+            //     }),
+            // });
+
+            // const result = await response.json();
+            // console.log("result", result);
+
+            // setCurrentPreview(result.url);
+            setCurrentTab("preview");
+            setIsPreviewLoading(false);
         },
     });
 
-    const extractFragmentFromMessage = (message?: UIMessage) => {
+    const extractCodeFromMessage = (message?: Message) => {
         return message?.parts
-            .filter(
+            ?.filter(
                 (part) =>
                     part.type === "tool-invocation" && part.toolInvocation?.args
             )
@@ -71,12 +91,12 @@ export function Client({ id, initialMessages }: ClientProps) {
 
     const [fragment, setFragment] = useState<
         DeepPartial<FragmentSchema>["code"]
-    >(() => extractFragmentFromMessage(initialMessages?.at(-1)));
+    >(() => extractCodeFromMessage(initialMessages?.at(-1)));
 
     const lastMessage = messages.at(-1);
 
     useEffect(() => {
-        const flattenedArgs = extractFragmentFromMessage(lastMessage);
+        const flattenedArgs = extractCodeFromMessage(lastMessage);
 
         if (!flattenedArgs?.length) {
             return;
@@ -105,7 +125,13 @@ export function Client({ id, initialMessages }: ClientProps) {
                 onSubmit={handleSubmit}
             />
 
-            <Artifact code={fragment} />
+            <Artifact
+                code={fragment}
+                isLoading={isPreviewLoading}
+                currentPreview={currentPreview}
+                currentTab={currentTab}
+                setCurrentTab={setCurrentTab}
+            />
         </div>
     );
 }
