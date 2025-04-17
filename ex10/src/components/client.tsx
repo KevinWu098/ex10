@@ -68,9 +68,6 @@ export function Client({ id }: ClientProps) {
         },
     });
 
-    console.log(messages, input);
-    console.log("error", error);
-
     return (
         <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">
             <Chat

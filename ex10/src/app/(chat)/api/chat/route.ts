@@ -1,14 +1,9 @@
-// import { generateExtension } from "@/app/(chat)/api/chat/generateExtension";
 import { getPageContext } from "@/app/(chat)/api/chat/getPageContext";
+import { generateExtension } from "@/app/(chat)/api/chat/streamObject";
 import { SYSTEM_PROMPT } from "@/lib/system";
-import {
-    generateUUID,
-    getMostRecentUserMessage,
-    getTrailingMessageId,
-} from "@/lib/utils";
+import { generateUUID, getMostRecentUserMessage } from "@/lib/utils";
 import { openai } from "@ai-sdk/openai";
 import {
-    appendResponseMessages,
     createDataStreamResponse,
     smoothStream,
     streamText,
@@ -42,25 +37,18 @@ export async function POST(request: Request) {
             execute: (dataStream) => {
                 const result = streamText({
                     model: openai("gpt-4o-mini"),
-                    system: "respond to the user's message",
+                    system: SYSTEM_PROMPT,
                     messages,
                     maxSteps: 5,
                     experimental_activeTools: [
-                        // "generateExtension",
+                        "generateExtension",
                         "getPageContext",
                     ],
                     experimental_transform: smoothStream({ chunking: "word" }),
                     experimental_generateMessageId: generateUUID,
                     tools: {
-                        // generateExtension: generateExtension({ dataStream }),
+                        generateExtension: generateExtension({ dataStream }),
                         getPageContext,
-                        // getWeather,
-                        // createDocument: createDocument({ session, dataStream }),
-                        // updateDocument: updateDocument({ session, dataStream }),
-                        // requestSuggestions: requestSuggestions({
-                        //     session,
-                        //     dataStream,
-                        // }),
                     },
                 });
 
