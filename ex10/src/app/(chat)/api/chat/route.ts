@@ -27,7 +27,7 @@ export async function POST(request: Request) {
             return new Response("No user message found", { status: 400 });
         }
 
-        console.log("server", messages);
+        console.log("\n\n======= SERVER =======", JSON.stringify(messages, null, 2));
 
         // TODO: DB
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
                     experimental_transform: smoothStream({ chunking: "word" }),
                     experimental_generateMessageId: generateUUID,
                     tools: {
-                        generateExtension: generateExtension({ dataStream }),
+                        generateExtension: generateExtension(),
                         getPageContext,
                     },
                 });

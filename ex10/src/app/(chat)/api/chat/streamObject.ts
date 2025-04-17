@@ -8,34 +8,14 @@ interface StreamObjectProps {
     dataStream: DataStreamWriter;
 }
 
-export const generateExtension = ({ dataStream }: StreamObjectProps) =>
+export const generateExtension = () =>
     tool({
         description:
-            "Generate a multi-file extension as the response based on the schema. This tool will generate an extension following the defined schema structure.",
-        parameters: z.object({
-            prompt: z.string(),
-        }),
-        execute: async ({ prompt }) => {
-            const stream = streamObject({
-                model: createOpenAI()("gpt-4o-mini"),
-                schema,
-                system: SYSTEM_PROMPT,
-                messages: [{ role: "user", content: prompt }],
-                mode: "tool",
-                maxRetries: 0,
-            });
-
-            for await (const chunk of stream.fullStream) {
-                dataStream.writeData({
-                    type: "object",
-                    content: chunk,
-                });
-            }
-
-            dataStream.writeData({ type: "finish", content: "" });
-
+            `Create/edit files in a multi-file browser extension. Make sure to stick to the schema.`,
+        parameters: schema,
+        execute: async ({ code, commentary, title, code: codeArray }) => {
             return {
-                content: "Object response has been streamed to the user.",
+                content: "completed",
             };
         },
     });
