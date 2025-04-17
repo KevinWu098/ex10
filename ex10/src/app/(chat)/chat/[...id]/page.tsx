@@ -1,7 +1,7 @@
 "use client";
 
 // TODO: server component
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Artifact } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
 import { ObjectMessage, toAISDKMessages } from "@/lib/message";
@@ -12,6 +12,7 @@ import {
 } from "@/lib/schema";
 import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { DeepPartial } from "ai";
+import { parseAsString, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 // const example: DeepPartial<FragmentSchema> = {
@@ -36,10 +37,13 @@ import { toast } from "sonner";
 // };
 
 export default function Page() {
+    const [input, setInput] = useQueryState("suggestion", {
+        defaultValue: "",
+    });
+
     const [messages, setMessages] = useState<ObjectMessage[]>([]);
     const [_errorMessage, setErrorMessage] = useState("");
     const [fragment, setFragment] = useState<DeepPartial<FragmentSchema>>();
-    const [input, setInput] = useState("");
 
     const { object, submit, isLoading, stop, error } = useObject({
         api: "/api/object",
@@ -147,6 +151,15 @@ export default function Page() {
             stop();
         }
     }, [error, stop]);
+
+    // ! this is a hack
+    const hasRun = useRef(false);
+    useEffect(() => {
+        if (input && !hasRun.current) {
+            hasRun.current = true;
+            handleSubmit();
+        }
+    }, [input, handleSubmit]);
 
     return (
         <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">

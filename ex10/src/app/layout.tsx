@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 import "./globals.css";
 
@@ -29,7 +30,9 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} min-w-5xl antialiased`}
             >
-                <main>{children}</main>
+                <NuqsAdapter>
+                    <main>{children}</main>
+                </NuqsAdapter>
                 <Toaster richColors />
             </body>
         </html>
