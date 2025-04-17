@@ -31,6 +31,7 @@ export function ChatLanding() {
         const input = suggestion ?? value;
         const searchParams = new URLSearchParams();
         searchParams.set("suggestion", input);
+        searchParams.set("run", "true");
 
         router.push(`/chat/abc?${searchParams.toString()}`);
     }, []);

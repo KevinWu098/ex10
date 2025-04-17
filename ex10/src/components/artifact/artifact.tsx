@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { ArtifactCode } from "@/components/artifact/artifact-code";
 import { ArtifactFileNames } from "@/components/artifact/artifact-file-names";
 import { DownloadZip } from "@/components/chat/download-zip";
@@ -25,7 +25,7 @@ interface ArtifactProps {
     fragment: DeepPartial<FragmentSchema> | undefined;
 }
 
-export const Artifact = ({ fragment }: ArtifactProps) => {
+export const Artifact = memo(({ fragment }: ArtifactProps) => {
     const [value, setValue] = useState("code");
     const [currentFile, setCurrentFile] = useState<string>("");
 
@@ -111,4 +111,6 @@ export const Artifact = ({ fragment }: ArtifactProps) => {
             </div>
         </Tabs>
     );
-};
+});
+
+Artifact.displayName = "Artifact";
