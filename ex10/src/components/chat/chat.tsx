@@ -13,6 +13,8 @@ interface ChatProps {
     onValueChange: (value: string) => void;
     onSubmit: () => void;
     onStop: () => void;
+    reload: UseChatHelpers["reload"];
+    setMessages: UseChatHelpers["setMessages"];
 }
 
 export const Chat = memo(
@@ -23,6 +25,8 @@ export const Chat = memo(
         onStop,
         onValueChange,
         onSubmit,
+        reload,
+        setMessages,
     }: ChatProps) => {
         const isLoading = status === "streaming" || status === "submitted";
 
@@ -31,6 +35,8 @@ export const Chat = memo(
                 <ChatMessages
                     messages={messages}
                     isLoading={isLoading}
+                    reload={reload}
+                    setMessages={setMessages}
                 />
 
                 <ChatInput

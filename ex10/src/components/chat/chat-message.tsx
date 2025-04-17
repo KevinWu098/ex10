@@ -1,29 +1,31 @@
 import React, { useState } from "react";
 import { ChatMessageAssistant } from "@/components/chat/chat-message-assistant";
 import { ChatMessageUser } from "@/components/chat/chat-message-user";
-import { Message } from "@ai-sdk/react";
+import { Message, UseChatHelpers } from "@ai-sdk/react";
 
 type MessageProps = {
+    message: Message;
     variant: Message["role"];
     children: string;
     id: string;
     attachments?: Message["experimental_attachments"];
     isLast?: boolean;
-    // onDelete: (id: string) => void;
-    // onEdit: (id: string, newText: string) => void;
-    // onReload: () => void;
+
     hasScrollAnchor?: boolean;
+    setMessages: UseChatHelpers["setMessages"];
+    reload: UseChatHelpers["reload"];
 };
 
 export function ChatMessage({
+    message,
     variant,
     children,
     id,
     attachments,
     isLast,
-    // onDelete,
-    // onEdit,
-    // onReload,
+
+    setMessages,
+    reload,
     hasScrollAnchor,
 }: MessageProps) {
     const [copied, setCopied] = useState(false);
@@ -37,14 +39,14 @@ export function ChatMessage({
     if (variant === "user") {
         return (
             <ChatMessageUser
+                message={message}
                 copied={copied}
                 copyToClipboard={copyToClipboard}
-                // onReload={onReload}
-                // onEdit={onEdit}
-                // onDelete={onDelete}
                 id={id}
                 hasScrollAnchor={hasScrollAnchor}
                 attachments={attachments}
+                setMessages={setMessages}
+                reload={reload}
             >
                 {children}
             </ChatMessageUser>
@@ -56,9 +58,11 @@ export function ChatMessage({
             <ChatMessageAssistant
                 copied={copied}
                 copyToClipboard={copyToClipboard}
-                // onReload={onReload}
+                reload={reload}
                 isLast={isLast}
                 hasScrollAnchor={hasScrollAnchor}
+                setMessages={setMessages}
+                id={id}
             >
                 {children}
             </ChatMessageAssistant>

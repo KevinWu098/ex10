@@ -2,6 +2,7 @@ import { memo, useRef } from "react";
 import { ChatMessageParts } from "@/components/chat/chat-message-parts";
 import { ChatContainer } from "@/components/ui/chat-container";
 import { ScrollButton } from "@/components/ui/scroll-button";
+import { UseChatHelpers } from "@ai-sdk/react";
 import { UIMessage } from "ai";
 import { LoaderIcon } from "lucide-react";
 
@@ -11,10 +12,12 @@ interface ChatMessagesProps {
     // onDelete
     // onEdit
     // onReload
+    setMessages: UseChatHelpers["setMessages"];
+    reload: UseChatHelpers["reload"];
 }
 
 export const ChatMessages = memo(
-    ({ messages, isLoading }: ChatMessagesProps) => {
+    ({ messages, isLoading, setMessages, reload }: ChatMessagesProps) => {
         const initialMessageCount = useRef(messages.length);
         const scrollRef = useRef<HTMLDivElement>(null);
         const containerRef = useRef<HTMLDivElement>(null);
@@ -50,6 +53,9 @@ export const ChatMessages = memo(
                                 // onEdit={onEdit}
                                 // onReload={onReload}
                                 hasScrollAnchor={hasScrollAnchor}
+                                reload={reload}
+                                setMessages={setMessages}
+                                message={message}
                             />
                         );
                     })}
