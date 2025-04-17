@@ -60,7 +60,7 @@ export function ChatInput({
             value={input}
             onValueChange={handleValueChange}
             isLoading={isLoading}
-            onSubmit={handleSubmit}
+            onSubmit={submitChat}
             className={cn(
                 "flex w-full max-w-3xl flex-row rounded-sm",
                 className
