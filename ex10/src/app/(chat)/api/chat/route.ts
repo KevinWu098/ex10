@@ -77,11 +77,6 @@ export async function POST(request: Request) {
                         generateExtension: generateExtension(),
                         getPageContext,
                     },
-                    onChunk: (chunk) => {
-                        // if (chunk.chunk.type === "tool-call-delta") {
-                        //     process.stdout.write(chunk.chunk.argsTextDelta);
-                        // }
-                    },
                     onFinish: async ({ response }) => {
                         try {
                             const assistantId = response.messages

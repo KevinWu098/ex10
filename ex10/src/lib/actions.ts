@@ -2,7 +2,6 @@
 
 import { Chat } from "@/db/schema";
 import { getChatById, saveChat } from "@/lib/queries";
-import { appendChatToLocalStorage } from "@/lib/utils";
 import { openai } from "@ai-sdk/openai";
 import { generateText, Message } from "ai";
 
@@ -41,7 +40,7 @@ export async function getChatsById({
             ids.map(async (id) => {
                 try {
                     return await getChatById({ id });
-                } catch (error) {
+                } catch {
                     console.error(`Failed to get chat with id ${id}`);
                     return null;
                 }
