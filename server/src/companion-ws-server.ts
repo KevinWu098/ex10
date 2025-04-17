@@ -41,12 +41,6 @@ export function startCompanionServer() {
         // Update last ping time for any message
         client.lastPing = Date.now();
         
-        // Handle ping messages from client
-        if (client.authenticated && data.type === 'ping') {
-          socket.send(JSON.stringify({ type: 'pong' }));
-          return;
-        }
-        
         // Handle initial authentication
         if (!client.authenticated) {
           if (data.type === 'extension-connected' && data.sessionId) {
@@ -59,6 +53,12 @@ export function startCompanionServer() {
               clearTimeout(authTimeout);
               socket.send(JSON.stringify({ type: 'auth-success' }));
               console.log(`Client authenticated with session ID: ${client.sessionId}`);
+              
+              // Test feature: Automatically request DOM content after authing to see if dom grabbing works
+            //   setTimeout(() => {
+            //     console.log(`Testing: Requesting DOM content from newly authenticated client ${client.sessionId}`);
+            //     socket.send(JSON.stringify({ type: 'get-dom-content' }));
+            //   }, 10000);
             } else {
               console.log('Invalid session ID provided');
               socket.close(1008, 'Invalid session ID');
@@ -69,11 +69,18 @@ export function startCompanionServer() {
           }
           return;
         }
+        // handle pings (used to keep the service worker alive)
+        if (data.type === 'ping') {
+          socket.send(JSON.stringify({ type: 'pong' }));
+          return;
+        }
         
         // Handle messages from authenticated clients
         if (data.type === 'dom-content') {
           // Handle DOM content received from extension
-          console.log(`Received DOM content from session ${client.sessionId}`);
+        //   console.log(`Received DOM content from session ${client.sessionId}`);
+        //   console.log(data.html);
+        //   console.log(`HTML content size: ${data.html ? data.html.length : 0} characters`);
           // Process the DOM content as needed
         }
       } catch (error) {
@@ -164,6 +171,6 @@ export function requestDomFromClient(sessionId: string): Promise<string> {
     client.socket.on('message', messageHandler);
     
     // Request the DOM content
-    client.socket.send(JSON.stringify({ type: 'get-html' }));
+    client.socket.send(JSON.stringify({ type: 'get-dom-content' }));
   });
 }

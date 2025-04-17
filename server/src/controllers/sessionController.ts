@@ -67,7 +67,7 @@ export const createSession = async (req: Request, res: Response) => {
     console.log(`Started extension dev server for ${session.username} with PID ${pid}`);
     
     // Wait 2 seconds and check if the process is still running
-    sendUpdate('running', { message: 'Verifying dev server is running...' });
+    sendUpdate('running', { message: 'Checking dev server status' });
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     try {

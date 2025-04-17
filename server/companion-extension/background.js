@@ -1,5 +1,6 @@
 let socket;
 let pingInterval;
+let isConnecting = false; // Flag to track connection attempts in progress
 
 function startPingInterval() {
     // Clear any existing interval
@@ -21,26 +22,22 @@ function stopPingInterval() {
         pingInterval = null;
     }
 }
-// TODO: CLIENT CONNECTS  MULTIPLE TIMES (twice i think)
-// TODO: CLIENT CONNECTS  MULTIPLE TIMES (twice i think)
-// TODO: CLIENT CONNECTS  MULTIPLE TIMES (twice i think)
-// TODO: CLIENT CONNECTS  MULTIPLE TIMES (twice i think)
-// TODO: CLIENT CONNECTS  MULTIPLE TIMES (twice i think)
-// TODO: CLIENT CONNECTS  MULTIPLE TIMES (twice i think)
-// TODO: CLIENT CONNECTS  MULTIPLE TIMES (twice i think)
-// TODO: CLIENT CONNECTS  MULTIPLE TIMES (twice i think)
-// TODO: CLIENT CONNECTS  MULTIPLE TIMES (twice i think)
-// TODO: CLIENT CONNECTS  MULTIPLE TIMES (twice i think)
+
 function connectToServer() {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        console.log("Already connected");
+    // If already connected or connection attempt in progress, don't create a new connection
+    if ((socket && socket.readyState === WebSocket.OPEN) || isConnecting) {
+        console.log("Already connected or connection in progress");
         return;
     }
+    
+    isConnecting = true;
+    console.log("Connecting to server...");
     
     socket = new WebSocket("ws://localhost:4926");
 
     socket.onopen = () => {
         console.log("Connected to main server");
+        isConnecting = false;
         
         // Add a small delay before sending the first message to ensure the connection is fully established
         setTimeout(() => {
@@ -76,7 +73,7 @@ function connectToServer() {
             });
         }
 
-        if (msg.type === "get-html") {
+        if (msg.type === "get-dom-content") {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
             chrome.scripting.executeScript({
@@ -92,12 +89,14 @@ function connectToServer() {
 
     socket.onclose = (event) => {
         console.warn(`Socket closed (${event.code}): ${event.reason || "No reason provided"}. Retrying...`);
+        isConnecting = false;
         stopPingInterval();
         setTimeout(connectToServer, 2000);
     };
 
     socket.onerror = (e) => {
         console.error("Socket error:", e);
+        isConnecting = false;
         socket.close();
     };
 }
@@ -122,5 +121,5 @@ chrome.runtime.onConnect.addListener(port => {
     });
 });
 
-// Initial connection
+// Initial connection - only call once
 connectToServer();
