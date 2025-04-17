@@ -11,7 +11,7 @@ import {
     PromptInputTextarea,
 } from "@/components/ui/prompt-input";
 import { createChat } from "@/lib/actions";
-import { cn } from "@/lib/utils";
+import { appendChatToLocalStorage, cn } from "@/lib/utils";
 import { ArrowUpIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,6 +41,7 @@ export function ChatLanding({ id }: ChatLandingProps) {
             try {
                 setIsLoading(input);
                 await createChat({ id, title: input });
+                appendChatToLocalStorage(id);
                 router.push(`/chat/${id}?${searchParams.toString()}`);
             } catch (error) {
                 console.error("Failed to create chat:", error);
@@ -58,9 +59,15 @@ export function ChatLanding({ id }: ChatLandingProps) {
 
     return (
         <div className="flex w-full flex-col items-center gap-8 pt-32 md:pt-48">
-            <h1 className="text-4xl font-semibold">
-                What browser extension will you create?
-            </h1>
+            <div className="space-y-2 text-center">
+                <h1 className="text-4xl font-semibold">
+                    What browser extension will you create?
+                </h1>
+                <h2 className="text-muted-foreground text-lg font-semibold">
+                    <span className="font-mono">ex10.dev</span> - build browser
+                    extensions, in the browser.
+                </h2>
+            </div>
 
             <div className="flex w-full max-w-3xl flex-col gap-2">
                 <PromptInput

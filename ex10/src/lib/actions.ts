@@ -1,6 +1,7 @@
 "use server";
 
-import { saveChat } from "@/lib/queries";
+import { Chat } from "@/db/schema";
+import { getChatById, saveChat } from "@/lib/queries";
 import { openai } from "@ai-sdk/openai";
 import { generateText, Message } from "ai";
 
@@ -27,4 +28,28 @@ export async function createChat({ id, title }: { id: string; title: string }) {
         id,
         title,
     });
+}
+
+export async function getChatsById({
+    ids,
+}: {
+    ids: string[];
+}): Promise<Chat[]> {
+    try {
+        const chats = await Promise.all(
+            ids.map(async (id) => {
+                try {
+                    return await getChatById({ id });
+                } catch {
+                    console.error(`Failed to get chat with id ${id}`);
+                    return null;
+                }
+            })
+        );
+
+        return chats.filter((c) => c !== null && c !== undefined);
+    } catch (error) {
+        console.error("Failed to get chats by ids");
+        throw error;
+    }
 }

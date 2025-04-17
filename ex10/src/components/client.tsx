@@ -6,30 +6,9 @@ import { Chat } from "@/components/chat/chat";
 import { type FragmentSchema } from "@/lib/schema";
 import { generateUUID } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
-import { DeepPartial, ToolInvocation, UIMessage } from "ai";
+import { DeepPartial, Message, ToolInvocation, UIMessage } from "ai";
 import { useQueryState } from "nuqs";
 import { toast } from "sonner";
-
-const example: DeepPartial<FragmentSchema> = {
-    commentary:
-        "I will create a simple example of a Chrome extension that changes the background color of a webpage. This will include a manifest file and a content script. The manifest will be structured according to Manifest V3 specifications, and the content script will handle the interaction with the webpage. I'll ensure to follow best practices for security and functionality.",
-    title: "Background Color Changer",
-    code: [
-        {
-            file_name: "manifest.json",
-            file_path: "manifest.json",
-            file_content:
-                '{\\n  "manifest_version": 3,\\n  "name": "Background Color Changer",\\n  "version": "1.0",\\n  "description": "A simple extension to change the background color of a webpage.",\\n  "permissions": [],\\n  "background": {\\n    "service_worker": "background.js"\\n  },\\n  "content_scripts": [\\n    {\\n      "matches": ["<all_urls>"],\\n      "js": ["content-script.js"]\\n    }\\n  ]\\n}',
-            file_finished: true,
-        },
-        {
-            file_name: "content-script.js",
-            file_path: "content-script.js",
-            file_content: "document.body.style.backgroundColor = 'lightblue';",
-            file_finished: true,
-        },
-    ],
-};
 
 type ToolInvocationUIPart = {
     type: "tool-invocation";
@@ -46,9 +25,9 @@ interface ClientProps {
 
 export function Client({ id, initialMessages }: ClientProps) {
     const [initialInput] = useQueryState("initialInput", { defaultValue: "" });
-
-    const [fragment, setFragment] =
-        useState<DeepPartial<FragmentSchema>["code"]>();
+    const [isPreviewLoading, setIsPreviewLoading] = useState(true);
+    const [currentPreview, setCurrentPreview] = useState<string>();
+    const [currentTab, setCurrentTab] = useState("code");
 
     const {
         messages,
@@ -74,27 +53,50 @@ export function Client({ id, initialMessages }: ClientProps) {
             console.error("Error in chat:", error);
             toast.error("An error occurred: " + error?.message);
         },
-        onFinish: (message) => {
+        onFinish: async (message) => {
             console.log("onFinish", message);
+
+            setIsPreviewLoading(true);
+
+            // const response = await fetch("/api/sandbox", {
+            //     method: "POST",
+            //     body: JSON.stringify({
+            //         id,
+            //         code: extractCodeFromMessage(message),
+            //     }),
+            // });
+
+            // const result = await response.json();
+            // console.log("result", result);
+
+            // setCurrentPreview(result.url);
+            setCurrentTab("preview");
+            setIsPreviewLoading(false);
         },
     });
 
-    const lastMessage = messages.at(-1);
-
-    useEffect(() => {
-        const flattenedArgs = lastMessage?.parts
-            .filter(
+    const extractCodeFromMessage = (message?: Message) => {
+        return message?.parts
+            ?.filter(
                 (part) =>
                     part.type === "tool-invocation" && part.toolInvocation?.args
             )
             .flatMap((part) => {
                 const args = (part as ToolInvocationUIPart).toolInvocation.args;
-
                 const code = args.code;
-
                 return code;
             })
             .filter(Boolean);
+    };
+
+    const [fragment, setFragment] = useState<
+        DeepPartial<FragmentSchema>["code"]
+    >(() => extractCodeFromMessage(initialMessages?.at(-1)));
+
+    const lastMessage = messages.at(-1);
+
+    useEffect(() => {
+        const flattenedArgs = extractCodeFromMessage(lastMessage);
 
         if (!flattenedArgs?.length) {
             return;
@@ -123,7 +125,13 @@ export function Client({ id, initialMessages }: ClientProps) {
                 onSubmit={handleSubmit}
             />
 
-            <Artifact code={fragment} />
+            <Artifact
+                code={fragment}
+                isLoading={isPreviewLoading}
+                currentPreview={currentPreview}
+                currentTab={currentTab}
+                setCurrentTab={setCurrentTab}
+            />
         </div>
     );
 }

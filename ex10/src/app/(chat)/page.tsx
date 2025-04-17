@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChatLanding } from "@/components/chat/chat-landing";
+import { TextHoverEffect } from "@/components/ui/text-hover-effect";
 import { generateUUID } from "@/lib/utils";
 
 // import { ExternalGallery } from "@/components/external-gallery/external-gallery";

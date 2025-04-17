@@ -30,3 +30,17 @@ export function getTrailingMessageId({
 
     return trailingMessage.id;
 }
+
+export function appendChatToLocalStorage(id: string) {
+    const savedChats = localStorage.getItem("ex10Chats");
+    let chats: string[] = [];
+
+    if (savedChats) {
+        chats = JSON.parse(savedChats);
+    }
+
+    if (!chats.includes(id)) {
+        chats.push(id);
+        localStorage.setItem("ex10Chats", JSON.stringify(chats));
+    }
+}
