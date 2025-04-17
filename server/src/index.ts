@@ -5,6 +5,7 @@ import { getSessionById, cleanupAllSessions } from './services/sessionService';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { Socket } from 'net';
 import { parse as parseUrl } from 'url';
+import path from 'path';
 
 const app = express();
 const httpServer = createServer(app);

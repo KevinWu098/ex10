@@ -1,0 +1,27 @@
+{
+  "license": "MIT",
+  "name": "ex10-extension",
+  "description": "Your new browser extension!",
+  "version": "0.0.1",
+  "keywords": [
+    "extension",
+    "browser-extension",
+    "web-extension",
+    "template"
+  ],
+  "scripts": {
+    "dev": "extension dev",
+    "start": "extension start",
+    "build": "extension build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "extension": "^2.0.0-rc.23"
+  },
+  "private": true,
+  "author": {
+    "name": "Your Name",
+    "email": "your@email.com",
+    "url": "https://yourwebsite.com"
+  }
+}

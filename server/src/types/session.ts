@@ -16,4 +16,7 @@ export interface Session {
   
   /** Session creation timestamp */
   createdAt: Date;
+  
+  /** Process ID of the extension dev server (if running) */
+  devServerPid?: number;
 } 

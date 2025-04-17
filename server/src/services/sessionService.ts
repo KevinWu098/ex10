@@ -15,6 +15,18 @@ const MAX_PORT = 9500;
 const usedPorts = new Set<number>();
 
 /**
+ * Check if a process is running
+ */
+const isProcessRunning = async (pid: number): Promise<boolean> => {
+  try {
+    const { stdout } = await execAsync(`ps -p ${pid} -o pid= || echo ""`, { maxBuffer: 1024 * 1024 });
+    return !!stdout.trim();
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
  * Generate a random username with the specified prefix
  */
 const generateUsername = (prefix: string = 'ex10_user_'): string => {
@@ -164,7 +176,7 @@ const startXpraServer = async (username: string, port: number): Promise<void> =>
     
     // Command to start Xpra server with browser
     // We need --xvfb="Xvfb -nolisten unix -nolisten tcp" to avoid really annoying X11 forwarding issues with silent fails (especially on WSL)
-    const cmd = `sudo -u ${username} xpra start --bind-tcp=0.0.0.0:${port} --start=chromium-browser --html=on --xvfb="Xvfb -nolisten unix -nolisten tcp"`;
+    const cmd = `sudo -u ${username} xpra start --bind-tcp=0.0.0.0:${port} --html=on --xvfb="Xvfb -nolisten unix -nolisten tcp"`;
     
     await execAsync(cmd);
     
@@ -187,20 +199,36 @@ export const cleanupSession = async (sessionId: string): Promise<boolean> => {
   }
   
   try {
-    const { username, xpraPort } = session;
+    const { username, xpraPort, devServerPid } = session;
     
     console.log(`Cleaning up session ${sessionId} for user ${username}`);
     
-    // 1. Kill the Xpra server
+    // 1. Kill the dev server process if it exists
+    if (devServerPid) {
+      try {
+        await execAsync(`sudo kill -15 ${devServerPid} || true`);
+        console.log(`Stopped dev server process ${devServerPid} for ${username}`);
+        
+        // Wait a short time to give the process a chance to gracefully terminate
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Force kill if still running (just to be sure)
+        await execAsync(`sudo kill -9 ${devServerPid} 2>/dev/null || true`);
+      } catch (error) {
+        console.error(`Error stopping dev server process ${devServerPid} for ${username}:`, error);
+      }
+    }
+    
+    // 2. Kill the Xpra server
     try {
       // Add the "|| true" to make the command succeed even if no processes are found
       await execAsync(`sudo pkill -f "xpra.*${username}" || true`);
       console.log(`Stopped Xpra server for ${username}`);
     } catch (error) {
-      console.error(`Error stopping Xpra server for ${username}:`, error);
+      //console.error(`Error stopping Xpra server for ${username}:`, error);
     }
     
-    // 2. Kill all processes for this user
+    // 3. Kill all processes for this user
     try {
       // Add the "|| true" to make the command succeed even if no processes are found
       await execAsync(`sudo pkill -9 -u ${username} || true`);
@@ -209,14 +237,14 @@ export const cleanupSession = async (sessionId: string): Promise<boolean> => {
       console.error(`Error killing processes for ${username}:`, error);
     }
     
-    // 3. Clean up network restrictions
+    // 4. Clean up network restrictions
     try {
       await cleanupNetworkRestrictions(username);
     } catch (error) {
       console.error(`Error cleaning up network restrictions for ${username}:`, error);
     }
     
-    // 4. Delete the Linux user
+    // 5. Delete the Linux user
     try {
       await execAsync(`sudo userdel -r ${username}`);
       console.log(`Deleted Linux user ${username}`);
@@ -224,11 +252,11 @@ export const cleanupSession = async (sessionId: string): Promise<boolean> => {
       console.error(`Error deleting Linux user ${username}:`, error);
     }
     
-    // 5. Release the port
+    // 6. Release the port
     releasePort(xpraPort);
     console.log(`Released port ${xpraPort}`);
     
-    // 6. Remove the session from memory
+    // 7. Remove the session from memory
     delete sessions[sessionId];
     
     return true;
@@ -310,4 +338,33 @@ process.on('SIGTERM', async () => {
   console.log('Received SIGTERM, cleaning up sessions before exit...');
   await cleanupAllSessions();
   process.exit(0);
-}); 
+});
+
+/**
+ * Check all running dev server processes and update sessions if any have died
+ */
+const checkDevServerProcesses = async () => {
+  const sessionsToCheck = Object.values(sessions).filter(session => session.devServerPid);
+  
+  if (sessionsToCheck.length === 0) {
+    return;
+  }
+  
+  console.log(`Checking health of ${sessionsToCheck.length} dev server processes...`);
+  
+  for (const session of sessionsToCheck) {
+    if (!session.devServerPid) continue;
+    
+    const isRunning = await isProcessRunning(session.devServerPid);
+    
+    if (!isRunning) {
+      console.warn(`Dev server process ${session.devServerPid} for user ${session.username} is no longer running`);
+      
+      // Clear the PID since the process is gone
+      session.devServerPid = undefined;
+    }
+  }
+};
+
+// Run the health check every 60 seconds
+setInterval(checkDevServerProcesses, 60 * 1000); 
