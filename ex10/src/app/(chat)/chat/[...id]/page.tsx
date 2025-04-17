@@ -40,7 +40,7 @@ export default function Page() {
     const [input, setInput] = useQueryState("suggestion", {
         defaultValue: "",
     });
-    const [run] = useQueryState("run", parseAsBoolean);
+    const [run] = useQueryState("run", parseAsBoolean.withDefault(false));
 
     const [messages, setMessages] = useState<ObjectMessage[]>([]);
     const [_errorMessage, setErrorMessage] = useState("");
