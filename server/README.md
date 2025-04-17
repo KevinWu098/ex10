@@ -12,7 +12,6 @@ The current implementation provides a simple session management system for Xpra 
 
 2. When a user accesses their session via `/session/:id`:
    - We validate the session ID
-   - Redirect to `/session/:id/xpra`
 
 3. When a user accesses `/session/:id/xpra`:
    - We validate the session ID again
@@ -49,5 +48,5 @@ The current implementation is a temporary solution. For proper security, we plan
 
 3. Direct access to Xpra interface:
    ```
-   GET /session/:id/xpra
+   GET /session/:id
    ``` 
