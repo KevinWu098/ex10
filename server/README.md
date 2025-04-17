@@ -1,52 +1,109 @@
 # Ex10 Session Management
 
-## Current Implementation
+## System Overview
 
-The current implementation provides a simple session management system for Xpra servers:
+Ex10 Session Management is a server application that provides isolated browser environments for extension development. The system:
 
-1. When a user requests a new session via `/createSession`, we:
-   - Generate a unique session ID
-   - Create a restricted Linux user
-   - Allocate a unique port for the Xpra server
-   - Start an Xpra server for that user on the allocated port
+1. Creates isolated Linux user accounts for each session
+2. Runs Xpra servers to provide browser access
+3. Sets up browser extension development environments
+4. Implements network restrictions for security
+5. Provides an API for session management and code updates
 
-2. When a user accesses their session via `/session/:id`:
-   - We validate the session ID
+## Implementation Details
 
-3. When a user accesses `/session/:id/xpra`:
-   - We validate the session ID again
-   - Redirect to the actual Xpra server at `http://localhost:<port>`
+### Session Creation
 
-This implementation provides basic session isolation through unique session IDs.
+When a user requests a new session via `/createSession`:
 
-## Future Authentication Plans
+1. A unique session ID is generated using secure random bytes
+2. A restricted Linux user is created with:
+   - Random username (prefixed with `ex10_user_`)
+   - Disabled password authentication
+   - Restricted login shell (`/usr/sbin/nologin`)
+   - Secure home directory permissions
+3. Network restrictions are configured using iptables:
+   - Allow connections to the session's Xpra port
+   - Allow outbound DNS (port 53)
+   - Allow outbound HTTP/HTTPS (ports 80/443)
+   - Block access to all other Xpra ports
+4. A unique port is allocated for the Xpra server (range 9000-9500)
+5. An Xpra server is started for the user
+6. A browser extension development environment is set up:
+   - Extension template is copied to user's home directory
+   - Dependencies are installed
+   - Development server is started
+7. The session details are stored in memory
 
-The current implementation is a temporary solution. For proper security, we plan to:
+### Session Access
 
-1. Add user authentication with JWT tokens
-2. Implement proper authorization checks for session access
-3. Create a reverse proxy configuration that securely maps authenticated sessions to their corresponding Xpra ports
-4. Add session expiration and cleanup logic
+When a user accesses their session:
+
+1. Via `/session/:id`:
+   - The session ID is validated
+   - The user is redirected to the session's index.html
+
+2. The system creates a proxy to the Xpra server
+   - Uses http-proxy-middleware to forward requests
+   - Handles both HTTP and WebSocket traffic
+   - Rewrites paths to remove the `/session/:id` prefix
+
+### Code Management
+
+The system provides an API for managing code in the extension directory:
+
+- `POST /updateCode` - Update a file in the extension directory
+  - Parameters: `sessionId`, `filePath`, `content`
+  - Path validation prevents directory traversal attacks
+  - File ownership is set to the session user
+
+### Session Termination
+
+When a session is terminated via `/session/:id` (DELETE):
+
+1. The extension development server process is stopped
+2. The Xpra server is terminated
+3. All user processes are killed
+4. Network restrictions are removed
+5. The Linux user account is deleted
+6. The allocated port is released
+7. Session information is removed from memory
+
+### Cleanup and Monitoring
+
+The system includes:
+
+1. Process monitoring to detect crashed development servers
+2. Signal handlers for graceful shutdown (SIGINT, SIGTERM)
+3. Automatic cleanup of all sessions on server shutdown
+
+## API Endpoints
+
+- `GET /createSession` - Create a new session (returns streaming updates)
+- `DELETE /session/:id` - Terminate a session
+- `POST /updateCode` - Update code in the extension directory
+- `GET /session/:id` - Access the session UI
+- `GET /session/:id/*` - Access resources within the session
 
 ## Security Considerations
 
-- The current implementation relies on security through obscurity (random session IDs)
-- It does not prevent unauthorized access if someone knows or guesses a valid session ID
-- It does not handle session timeout or cleaning up unused sessions
+- Each session runs under a separate Linux user account
+- Network restrictions are enforced using iptables
+- Sessions are isolated from each other
+- File operations are performed with proper ownership and permissions
+- Path validation prevents directory traversal attacks
 
-## Usage
+## Extensions Development
 
-1. Create a new session:
-   ```
-   GET /createSession
-   ```
+The system creates a browser extension development environment for each session:
+- Uses a template extension with manifest.json
+- Installs necessary dependencies
+- Runs a development server
+- Provides live updates for code changes
 
-2. Access a session:
-   ```
-   GET /session/:id
-   ```
+## Cleanup Process
 
-3. Direct access to Xpra interface:
-   ```
-   GET /session/:id
-   ``` 
+Session resources are cleaned up:
+- On explicit termination request
+- On server shutdown
+- After session crashes (monitored periodically) 

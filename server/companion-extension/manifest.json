@@ -1,0 +1,11 @@
+{
+    "name": "ex10 Companion",
+    "version": "1.0",
+    "manifest_version": 3,
+    "permissions": ["scripting", "tabs", "activeTab"],
+    "host_permissions": ["<all_urls>"],
+    "background": {
+      "service_worker": "background.js"
+    }
+  }
+  

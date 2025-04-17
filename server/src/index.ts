@@ -6,6 +6,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import { Socket } from 'net';
 import { parse as parseUrl } from 'url';
 import path from 'path';
+import { requestDomFromClient, startCompanionServer, stopCompanionServer } from './companion-ws-server';
 
 const app = express();
 const httpServer = createServer(app);
@@ -20,6 +21,42 @@ app.use(express.json());
 app.get('/createSession', createSession);
 app.delete('/session/:id', terminateSession);
 app.post('/updateCode', updateCode);
+
+// DOM content retrieval endpoint
+app.get('/getSessionDom/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const session = true;//await getSessionById(id);
+    
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: 'Session not found'
+      });
+    }
+    
+    try {
+      const domContent = await requestDomFromClient(id);
+      return res.status(200).json({
+        success: true,
+        dom: domContent
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to retrieve DOM content',
+        error: error.message
+      });
+    }
+  } catch (error: any) {
+    console.error('DOM retrieval error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+});
 
 // store session proxies for each session id so we don't recreate them on each request
 const sessionProxies: Record<string, any> = {};
@@ -130,11 +167,16 @@ httpServer.on('upgrade', async (req, socket, head) => {
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  
+  // Start the companion WebSocket server
+  startCompanionServer();
 });
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
   console.log('Shutting down server...');
+  // Stop the companion WebSocket server
+  stopCompanionServer();
   // Close HTTP server
   httpServer.close();
   // Cleanup will be handled by the handlers in sessionService.ts
@@ -142,6 +184,8 @@ process.on('SIGINT', async () => {
 
 process.on('SIGTERM', async () => {
   console.log('Shutting down server...');
+  // Stop the companion WebSocket server
+  stopCompanionServer();
   // Close HTTP server
   httpServer.close();
   // Cleanup will be handled by the handlers in sessionService.ts

@@ -1,0 +1,169 @@
+import { WebSocketServer } from 'ws';
+import { IncomingMessage } from 'http';
+
+interface Client {
+  socket: any;
+  sessionId: string;
+  authenticated: boolean;
+  lastPing?: number;
+}
+
+let wss: WebSocketServer | null = null;
+const clients: Map<string, Client> = new Map();
+let connectionCheckInterval: NodeJS.Timeout | null = null;
+
+export function startCompanionServer() {
+  if (wss) return; // Already started
+  
+  wss = new WebSocketServer({ port: 4926 });
+  console.log('Companion WebSocket server started on port 4926');
+
+  wss.on('connection', (socket, request: IncomingMessage) => {
+    const client: Client = {
+      socket,
+      sessionId: '',
+      authenticated: false,
+      lastPing: Date.now()
+    };
+    
+    // Set timeout for authentication
+    const authTimeout = setTimeout(() => {
+      if (!client.authenticated) {
+        console.log('Client failed to authenticate in time');
+        socket.close(1008, 'Authentication timeout');
+      }
+    }, 5000);
+    
+    socket.on('message', (msg) => {
+      try {
+        const data = JSON.parse(msg.toString());
+        
+        // Update last ping time for any message
+        client.lastPing = Date.now();
+        
+        // Handle ping messages from client
+        if (client.authenticated && data.type === 'ping') {
+          socket.send(JSON.stringify({ type: 'pong' }));
+          return;
+        }
+        
+        // Handle initial authentication
+        if (!client.authenticated) {
+          if (data.type === 'extension-connected' && data.sessionId) {
+            // Verify the session ID
+            if (data.sessionId === 'STR_REPLACE_SESSION_ID') {
+              client.sessionId = data.sessionId;
+              client.authenticated = true;
+              clients.set(client.sessionId, client);
+              
+              clearTimeout(authTimeout);
+              socket.send(JSON.stringify({ type: 'auth-success' }));
+              console.log(`Client authenticated with session ID: ${client.sessionId}`);
+            } else {
+              console.log('Invalid session ID provided');
+              socket.close(1008, 'Invalid session ID');
+            }
+          } else {
+            console.log('First message was not authentication');
+            socket.close(1008, 'Authentication required');
+          }
+          return;
+        }
+        
+        // Handle messages from authenticated clients
+        if (data.type === 'dom-content') {
+          // Handle DOM content received from extension
+          console.log(`Received DOM content from session ${client.sessionId}`);
+          // Process the DOM content as needed
+        }
+      } catch (error) {
+        console.error('Failed to parse message:', error);
+        socket.close(1008, 'Invalid message format');
+      }
+    });
+    
+    socket.on('close', () => {
+      if (client.sessionId) {
+        clients.delete(client.sessionId);
+        console.log(`Client disconnected: ${client.sessionId}`);
+      }
+    });
+  });
+  
+  // Start connection check interval
+  if (!connectionCheckInterval) {
+    connectionCheckInterval = setInterval(() => {
+      const now = Date.now();
+      const timeout = 60000; // 60 seconds
+      
+      clients.forEach((client, sessionId) => {
+        // Check if client hasn't sent any message in the timeout period
+        if (client.lastPing && now - client.lastPing > timeout) {
+          console.log(`Client ${sessionId} timed out (no ping in ${timeout/1000}s)`);
+          try {
+            client.socket.close(1001, 'Connection timeout');
+          } catch (err) {
+            console.error('Error closing timed out connection:', err);
+          }
+          clients.delete(sessionId);
+        }
+      });
+    }, 30000); // Check every 30 seconds
+  }
+  
+  return wss;
+}
+
+// Clean up on server shutdown
+export function stopCompanionServer() {
+  if (connectionCheckInterval) {
+    clearInterval(connectionCheckInterval);
+    connectionCheckInterval = null;
+  }
+  
+  if (wss) {
+    wss.close();
+    wss = null;
+    console.log('Companion WebSocket server stopped');
+  }
+  
+  clients.clear();
+}
+
+// Function to request DOM content from a specific client
+export function requestDomFromClient(sessionId: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const client = clients.get(sessionId);
+    
+    if (!client || !client.authenticated) {
+      reject(new Error('Client not found or not authenticated'));
+      return;
+    }
+    
+    // Set up a one-time listener for the DOM content response
+    const messageHandler = (msg: any) => {
+      try {
+        const data = JSON.parse(msg.toString());
+        if (data.type === 'dom-content' && data.html) {
+          client.socket.removeListener('message', messageHandler);
+          clearTimeout(timeout);
+          resolve(data.html);
+        }
+      } catch (error) {
+        // Don't reject here, as this might be a different message
+      }
+    };
+    
+    // Set timeout for response
+    const timeout = setTimeout(() => {
+      client.socket.removeListener('message', messageHandler);
+      reject(new Error('Timeout waiting for DOM content'));
+    }, 5000);
+    
+    // Add the temporary listener
+    client.socket.on('message', messageHandler);
+    
+    // Request the DOM content
+    client.socket.send(JSON.stringify({ type: 'get-html' }));
+  });
+}
