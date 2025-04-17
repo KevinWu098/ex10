@@ -1,8 +1,6 @@
-import { resolve } from "path";
-import { config } from "dotenv";
-import { defineConfig } from "drizzle-kit";
+import "dotenv/config";
 
-config({ path: resolve(process.cwd(), ".env.local") });
+import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
     out: "./drizzle",

@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { ChatMessageAssistant } from "@/components/chat/chat-message-assistant";
 import { ChatMessageUser } from "@/components/chat/chat-message-user";
-import { Message as MessageType } from "@ai-sdk/react";
+import { Message } from "@ai-sdk/react";
 
 type MessageProps = {
-    variant: MessageType["role"];
+    variant: Message["role"];
     children: string;
     id: string;
-    attachments?: MessageType["experimental_attachments"];
+    attachments?: Message["experimental_attachments"];
     isLast?: boolean;
     // onDelete: (id: string) => void;
     // onEdit: (id: string, newText: string) => void;
