@@ -128,7 +128,7 @@ export const createSession = async (req: Request, res: Response) => {
             try {
               // Replace the pattern with the new one that includes fallback to cleaned string
               await execAsync(
-                `cd /home/${session.username}/extension && sed -i 's#options.port = Number(options.port);#options.port = Number(options.port) || Number(options.port.replace(/\\\\D/g, \\'\\'));#g' "${filePath}"`,
+                `cd /home/${session.username}/extension && sed -i 's#options.port = Number(options.port);#options.port = Number(options.port) || Number(options.port.replace(/\\\\D/g, ""));#g' "${filePath}"`,
                 { maxBuffer: 1024 * 1024 }
               );
               sendUpdate('running', { message: `Port handling patched: ${filePath}` });
