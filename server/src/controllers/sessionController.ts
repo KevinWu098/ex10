@@ -52,11 +52,31 @@ export const createSession = async (req: Request, res: Response) => {
       res.end();
       return;
     }
-    
+
     // Start the extension.js development server in the background and save its PID
     sendUpdate('running', { message: 'Starting extension dev server' });
+
+    // First find the active xpra display for this user
+    const { stdout: xpraOutput } = await execAsync(
+      `sudo -u ${session.username} xpra list | grep LIVE | grep -oP ':\\d+'`,
+      { maxBuffer: 1024 * 1024 }
+    );
+    
+    // Extract the display number from the xpra output (should be something like ":0")
+    const displayId = xpraOutput.trim();
+    
+    if (!displayId) {
+      sendUpdate('error', { message: 'Failed to find active XPRA display' });
+      console.error(`Failed to find active XPRA display for ${session.username}`);
+      res.end();
+      return;
+    }
+    
+    console.log(`Found active XPRA display ${displayId} for user ${session.username}`);
+    
+    // Now start the extension dev server with the correct display
     const { stdout } = await execAsync(
-      `cd /home/${session.username}/extension && sudo -u ${session.username} bash -c 'nohup pnpm dev > /home/${session.username}/extension-dev-server.log 2>&1 & echo $!'`,
+      `cd /home/${session.username}/extension && sudo -u ${session.username} bash -c 'DISPLAY=${displayId} nohup pnpm dev --port={${session.xpraPort-1000}} > /home/${session.username}/extension-dev-server.log 2>&1 & echo $!'`,
       { maxBuffer: 1024 * 1024 }
     );
     
@@ -64,7 +84,7 @@ export const createSession = async (req: Request, res: Response) => {
     const pid = parseInt(stdout.trim(), 10);
     session.devServerPid = pid;
     
-    console.log(`Started extension dev server for ${session.username} with PID ${pid}`);
+    console.log(`Started extension dev server for ${session.username} with PID ${pid} on display ${displayId}`);
     
     // Wait 2 seconds and check if the process is still running
     sendUpdate('running', { message: 'Checking dev server status' });
@@ -176,6 +196,7 @@ export const terminateSession = async (req: Request, res: Response) => {
  *   - file_finished: boolean indicating if the file update is completed
  */
 export const updateCode = async (req: Request, res: Response) => {
+  console.log("updateCode called");
   try {
     const { sessionId, code } = req.body;
     
@@ -207,20 +228,40 @@ export const updateCode = async (req: Request, res: Response) => {
       });
     }
     
-    // Get the full path to the file
-    const fullPath = path.join(`/home/${session.username}/extension`, normalizedPath);
+    // additional validation (tryna prevent rce vuln when ppl try and mess with the path param)
+    if (/[;&|`$><*()!#]/.test(normalizedPath)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Path contains invalid characters'
+      });
+    }
+    
+    // Get the full path to the file - escape for shell use
+    const baseDir = `/home/${session.username}/extension`;
+    const fullPath = path.join(baseDir, normalizedPath);
+    const escapedFullPath = fullPath.replace(/'/g, "'\\''"); // Escape single quotes for shell
+    
+    // Create directory if needed as the session user
+    await execAsync(`sudo -u ${session.username} mkdir -p '${path.dirname(escapedFullPath)}'`);
     
     // Check if the file exists before writing
-    const fileExists = await fs.promises.access(fullPath)
-      .then(() => true)
+    const fileExists = await execAsync(`sudo -u ${session.username} test -f '${escapedFullPath}' && echo "true" || echo "false"`)
+      .then(({stdout}) => stdout.trim() === "true")
       .catch(() => false);
     
-    // Write the file
-    await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
-    await fs.promises.writeFile(fullPath, code.file_content);
+    // Write content to a temporary file that only root can access
+    const tempFilePath = `/tmp/file_content_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    await fs.promises.writeFile(tempFilePath, code.file_content);
     
-    // Change ownership to the session user
-    await execAsync(`chown ${session.username}:${session.username} "${fullPath}"`);
+    try {
+      // Copy the file to the destination as the user
+      // If we try to write directly it becomes trivial to inject arbitrary commands and run it as root
+      // tbh theres probably vulns elsewhere but this is an mvp lmao
+      await execAsync(`cat "${tempFilePath}" | sudo -u ${session.username} tee '${escapedFullPath}' > /dev/null`);
+    } finally {
+      // Always clean up the temporary file
+      await fs.promises.unlink(tempFilePath).catch(() => {});
+    }
     
     return res.status(200).json({
       success: true,
