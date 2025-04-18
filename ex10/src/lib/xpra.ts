@@ -82,6 +82,8 @@ export async function updateXpraSession(
         }
 
         const result = await response.json();
+
+        console.log("SEND SUCCESS");
         return result;
     } catch (error) {
         console.error("Error updating code in session:", error);
