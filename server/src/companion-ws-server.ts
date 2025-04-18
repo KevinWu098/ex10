@@ -156,6 +156,11 @@ export function requestDomFromClient(sessionId: string): Promise<string> {
           clearTimeout(timeout);
           resolve(data.html);
         }
+        if (data.type === 'dom-content-error') {
+          client.socket.removeListener('message', messageHandler);
+          clearTimeout(timeout);
+          reject(new Error(data.error));
+        }
       } catch (error) {
         // Don't reject here, as this might be a different message
       }
