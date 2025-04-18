@@ -7,6 +7,7 @@ import { Socket } from 'net';
 import { parse as parseUrl } from 'url';
 import path from 'path';
 import { requestDomFromClient, startCompanionServer, stopCompanionServer } from './companion-ws-server';
+import cors from 'cors';
 
 const app = express();
 const httpServer = createServer(app);
@@ -15,6 +16,7 @@ const httpServer = createServer(app);
 httpServer.setMaxListeners(20);
 
 // Middleware
+app.use(cors()); // Enable CORS for all routes
 app.use(express.json());
 
 // Routes
