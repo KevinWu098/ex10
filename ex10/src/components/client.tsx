@@ -5,6 +5,7 @@ import { Artifact } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
 import { type FragmentSchema } from "@/lib/schema";
 import { generateUUID } from "@/lib/utils";
+import { createXpraSession, updateXpraSession } from "@/lib/xpra";
 import { useChat } from "@ai-sdk/react";
 import { DeepPartial, Message, ToolInvocation, UIMessage } from "ai";
 import { useQueryState } from "nuqs";
@@ -26,13 +27,13 @@ interface ClientProps {
 export function Client({ id, initialMessages }: ClientProps) {
     const [initialInput] = useQueryState("initialInput", { defaultValue: "" });
     const [isPreviewLoading, setIsPreviewLoading] = useState(true);
-    const [currentPreview, setCurrentPreview] = useState<string>();
+    const [sessionId, setSessionId] = useState<string>();
     const [currentTab, setCurrentTab] = useState("code");
 
     const {
         messages,
         setMessages,
-        handleSubmit,
+        handleSubmit: submit,
         input,
         setInput,
         append,
@@ -56,37 +57,79 @@ export function Client({ id, initialMessages }: ClientProps) {
         onFinish: async (message) => {
             console.log("onFinish", message);
 
-            setIsPreviewLoading(true);
+            // setIsPreviewLoading(true);
 
-            // const response = await fetch("/api/sandbox", {
-            //     method: "POST",
-            //     body: JSON.stringify({
-            //         id,
-            //         code: extractCodeFromMessage(message),
-            //     }),
-            // });
+            const code = extractCodeFromMessage(message);
+            try {
+                if (!code) {
+                    return;
+                }
 
-            // const result = await response.json();
-            // console.log("result", result);
+                if (!sessionId) {
+                    toast.error(
+                        "Could not send code to xpra. Please try again."
+                    );
+                    return;
+                }
 
-            // setCurrentPreview(result.url);
+                await Promise.all(
+                    code.map((c) =>
+                        updateXpraSession(
+                            sessionId,
+                            c.file_path,
+                            c.file_content
+                        )
+                    )
+                );
+            } catch (error) {
+                console.error("Failed to update Xpra session:", error);
+                toast.error("Failed to update code in session");
+            }
+
             setCurrentTab("preview");
-            setIsPreviewLoading(false);
+            // setIsPreviewLoading(false);
         },
     });
 
-    const extractCodeFromMessage = (message?: Message) => {
-        return message?.parts
-            ?.filter(
-                (part) =>
-                    part.type === "tool-invocation" && part.toolInvocation?.args
-            )
-            .flatMap((part) => {
-                const args = (part as ToolInvocationUIPart).toolInvocation.args;
-                const code = args.code;
-                return code;
-            })
-            .filter(Boolean);
+    const xpraSessionCreated = useRef(false);
+
+    const handleSubmit = async () => {
+        if (!xpraSessionCreated.current) {
+            xpraSessionCreated.current = true;
+
+            createXpraSession()
+                .then(({ sessionId }) => {
+                    setSessionId(sessionId);
+                    console.log("Xpra session created with ID:", sessionId);
+                    setIsPreviewLoading(false);
+                })
+                .catch((error) => {
+                    console.error("Failed to create Xpra session:", error);
+                    toast.error("Xpra session not created");
+                });
+        }
+
+        submit();
+    };
+
+    const extractCodeFromMessage = (
+        message?: Message
+    ): FragmentSchema["code"] => {
+        return (
+            message?.parts
+                ?.filter(
+                    (part) =>
+                        part.type === "tool-invocation" &&
+                        part.toolInvocation?.args
+                )
+                .flatMap((part) => {
+                    const args = (part as ToolInvocationUIPart).toolInvocation
+                        .args;
+                    const code = args.code;
+                    return code;
+                })
+                .filter(Boolean) ?? null
+        );
     };
 
     const [fragment, setFragment] = useState<
@@ -115,7 +158,7 @@ export function Client({ id, initialMessages }: ClientProps) {
     }, [initialInput, handleSubmit, initialMessages?.length]);
 
     return (
-        <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">
+        <div className="flex flex-row w-full h-full max-h-full gap-4 p-2">
             <Chat
                 input={input}
                 messages={messages}
@@ -130,7 +173,7 @@ export function Client({ id, initialMessages }: ClientProps) {
             <Artifact
                 code={fragment}
                 isLoading={isPreviewLoading}
-                currentPreview={currentPreview}
+                currentPreview={sessionId}
                 currentTab={currentTab}
                 setCurrentTab={setCurrentTab}
             />

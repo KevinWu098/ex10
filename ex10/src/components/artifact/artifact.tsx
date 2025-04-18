@@ -58,11 +58,11 @@ export const Artifact = memo(
         return (
             <Tabs
                 defaultValue="code"
-                className="grow gap-0 overflow-hidden"
+                className="gap-0 overflow-hidden grow"
                 value={currentTab}
                 onValueChange={setCurrentTab}
             >
-                <div className="border-input mb-2 flex justify-between rounded-sm border p-2 shadow-xs">
+                <div className="flex justify-between p-2 mb-2 border rounded-sm shadow-xs border-input">
                     <TabsList className="rounded-sm">
                         <TabsTrigger
                             value="code"
@@ -128,7 +128,7 @@ export const Artifact = memo(
                         className="flex h-full"
                     >
                         {isLoading || !currentPreview ? (
-                            <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+                            <div className="flex flex-col items-center justify-center w-full h-full gap-2">
                                 <Loader2 className="size-8 animate-spin" />
                                 <span className="text-lg">
                                     Loading preview...
@@ -136,9 +136,9 @@ export const Artifact = memo(
                             </div>
                         ) : (
                             <iframe
-                                className="h-full w-full border-0"
+                                className="w-full h-full border-0"
                                 title="Preview"
-                                src="https://www.google.com"
+                                src={`${process.env.XPRA_SERVER_URL}/session/${currentPreview}`}
                             />
                         )}
                     </TabsContent>
