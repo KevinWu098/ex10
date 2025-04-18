@@ -1,16 +1,44 @@
 import express from 'express';
-import { createServer, ServerResponse } from 'http';
+import { createServer as createHttpServer, ServerResponse } from 'http';
+import { createServer as createHttpsServer } from 'https';
+import * as fs from 'fs';
+import * as path from 'path';
 import { createSession, terminateSession, updateCode } from './controllers/sessionController';
 import { getSessionById, cleanupAllSessions } from './services/sessionService';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { Socket } from 'net';
 import { parse as parseUrl } from 'url';
-import path from 'path';
 import { requestDomFromClient, startCompanionServer, stopCompanionServer } from './companion-ws-server';
 import cors from 'cors';
 
+// SSL/HTTPS Configuration
+const SSL_CONFIG = {
+  enabled: process.env.USE_SSL === 'true' || false,
+  certPath: process.env.SSL_CERT_PATH || path.join(__dirname, '../certs/server.crt'),
+  keyPath: process.env.SSL_KEY_PATH || path.join(__dirname, '../certs/server.key')
+};
+
 const app = express();
-const httpServer = createServer(app);
+
+// Create HTTP or HTTPS server based on configuration
+let httpServer;
+if (SSL_CONFIG.enabled) {
+  try {
+    const httpsOptions = {
+      key: fs.readFileSync(SSL_CONFIG.keyPath),
+      cert: fs.readFileSync(SSL_CONFIG.certPath)
+    };
+    httpServer = createHttpsServer(httpsOptions, app);
+    console.log('HTTPS server created with SSL certificates');
+  } catch (error) {
+    console.error('Failed to load SSL certificates:', error);
+    console.warn('Falling back to HTTP server');
+    httpServer = createHttpServer(app);
+  }
+} else {
+  httpServer = createHttpServer(app);
+  console.log('HTTP server created (SSL disabled)');
+}
 
 // Increase max listeners to prevent warnings
 httpServer.setMaxListeners(20);
@@ -168,10 +196,11 @@ httpServer.on('upgrade', async (req, socket, head) => {
 // Start server
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  const protocol = SSL_CONFIG.enabled ? 'HTTPS' : 'HTTP';
+  console.log(`${protocol} Server running on port ${PORT}`);
   
-  // Start the companion WebSocket server
-  startCompanionServer();
+  // Start the companion WebSocket server with the same SSL configuration
+  startCompanionServer(SSL_CONFIG);
 });
 
 // Handle graceful shutdown
