@@ -1,5 +1,6 @@
 import { WebSocketServer } from 'ws';
 import { IncomingMessage } from 'http';
+import { getSessionById } from './services/sessionService';
 
 interface Client {
   socket: any;
@@ -45,7 +46,8 @@ export function startCompanionServer() {
         if (!client.authenticated) {
           if (data.type === 'extension-connected' && data.sessionId) {
             // Verify the session ID
-            if (data.sessionId === 'STR_REPLACE_SESSION_ID') {
+            const session = getSessionById(data.sessionId);
+            if (session) {
               client.sessionId = data.sessionId;
               client.authenticated = true;
               clients.set(client.sessionId, client);
