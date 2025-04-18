@@ -1,5 +1,5 @@
 {
-    "name": "ex10",
+    "name": "ex10-companion-extension",
     "version": "1.0",
     "manifest_version": 3,
     "permissions": ["scripting", "tabs", "activeTab"],
