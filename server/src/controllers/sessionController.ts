@@ -168,20 +168,22 @@ export const terminateSession = async (req: Request, res: Response) => {
 /**
  * Update code in the extension directory
  * 
- * Query params:
+ * Request body:
  * sessionId: the id of the session
- * filePath: the path to the file to update
- * content: the content to update the file with
+ * code: object containing:
+ *   - file_path: path to the file relative to extension directory
+ *   - file_content: the content to write to the file
+ *   - file_finished: boolean indicating if the file update is completed
  */
 export const updateCode = async (req: Request, res: Response) => {
   try {
-    const { sessionId, filePath, content } = req.body;
+    const { sessionId, code } = req.body;
     
     // Validate required fields
-    if (!sessionId || !filePath || content === undefined) {
+    if (!sessionId || !code || !code.file_path || code.file_content === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: sessionId, filePath, or content'
+        message: 'Missing required fields: sessionId, code.file_path, or code.file_content'
       });
     }
     
@@ -195,7 +197,7 @@ export const updateCode = async (req: Request, res: Response) => {
     }
     
     // Normalize and validate the file path to prevent directory traversal
-    let normalizedPath = path.normalize(filePath).replace(/^\/+/, '');
+    let normalizedPath = path.normalize(code.file_path).replace(/^\/+/, '');
     
     // Ensure the path doesn't try to escape the extension directory
     if (normalizedPath.includes('..') || normalizedPath.startsWith('/') || normalizedPath.startsWith('\\')) {
@@ -215,7 +217,7 @@ export const updateCode = async (req: Request, res: Response) => {
     
     // Write the file
     await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
-    await fs.promises.writeFile(fullPath, content);
+    await fs.promises.writeFile(fullPath, code.file_content);
     
     // Change ownership to the session user
     await execAsync(`chown ${session.username}:${session.username} "${fullPath}"`);
@@ -223,6 +225,7 @@ export const updateCode = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       message: `File ${fileExists ? 'updated' : 'created'} successfully`,
+      file_finished: code.file_finished
     });
   } catch (error: any) {
     console.error('Error updating code:', error);
