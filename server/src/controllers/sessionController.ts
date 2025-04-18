@@ -106,6 +106,45 @@ export const createSession = async (req: Request, res: Response) => {
         
         sendUpdate('running', { message: 'Library patching complete' });
       }
+      
+      // Find and patch all instances of the port assignment pattern
+      sendUpdate('running', { message: 'Patching port handling' });
+      
+      try {
+        // Find all files containing the port assignment pattern
+        const { stdout: portGrepResult } = await execAsync(
+          `cd /home/${session.username}/extension && grep -R -n -F -l -- 'options.port = Number(options.port);' node_modules`,
+          { maxBuffer: 5 * 1024 * 1024 }
+        );
+        
+        if (!portGrepResult.trim()) {
+          sendUpdate('running', { message: 'No files found needing port handling patch' });
+        } else {
+          // Process each file that needs patching
+          const portFilesToPatch = portGrepResult.trim().split('\n');
+          sendUpdate('running', { message: `Found ${portFilesToPatch.length} files to patch for port handling` });
+          
+          for (const filePath of portFilesToPatch) {
+            try {
+              // Replace the pattern with the new one that includes fallback to cleaned string
+              await execAsync(
+                `cd /home/${session.username}/extension && sed -i 's#options.port = Number(options.port);#options.port = Number(options.port) || Number(options.port.replace(/\\\\D/g, \\'\\'));#g' "${filePath}"`,
+                { maxBuffer: 1024 * 1024 }
+              );
+              sendUpdate('running', { message: `Port handling patched: ${filePath}` });
+            } catch (patchError: any) {
+              sendUpdate('running', { message: `Warning: Failed to patch port handling in ${filePath}: ${patchError.message}` });
+              console.warn(`Failed to patch port handling in ${filePath}: ${patchError.message}`);
+            }
+          }
+          
+          sendUpdate('running', { message: 'Port handling patching complete' });
+        }
+      } catch (portPatchError: any) {
+        sendUpdate('running', { message: `Warning: Error during port handling patch: ${portPatchError.message}` });
+        console.warn(`Error during port handling patch: ${portPatchError.message}`);
+        // Continue execution - this is a non-critical patch
+      }
     } catch (error: any) {
       sendUpdate('error', { message: `Error patching libraries: ${error.message}` });
       console.error(`Error patching libraries: ${error.message}`);
@@ -136,7 +175,7 @@ export const createSession = async (req: Request, res: Response) => {
     
     // Now start the extension dev server with the correct display
     const { stdout } = await execAsync(
-      `cd /home/${session.username}/extension && sudo -u ${session.username} bash -c 'DISPLAY=${displayId} nohup pnpm dev  > /home/${session.username}/extension-dev-server.log 2>&1 & echo $!'`,
+      `cd /home/${session.username}/extension && sudo -u ${session.username} bash -c 'DISPLAY=${displayId} nohup pnpm dev --port={${session.xpraPort-1000}} > /home/${session.username}/extension-dev-server.log 2>&1 & echo $!'`,
       { maxBuffer: 1024 * 1024 }
     );
     
@@ -156,7 +195,7 @@ export const createSession = async (req: Request, res: Response) => {
         { maxBuffer: 1024 * 1024 }
       );
       
-      if (false && !psCheck.trim()) {
+      if (!psCheck.trim()) {
         sendUpdate('error', { message: `Dev server failed to start` });
         console.error(`Dev server process ${pid} failed to start properly for ${session.username}`);
         
