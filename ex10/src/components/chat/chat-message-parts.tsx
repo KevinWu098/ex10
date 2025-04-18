@@ -1,6 +1,7 @@
 import { ChatMessage } from "@/components/chat/chat-message";
 import { Message, UseChatHelpers } from "@ai-sdk/react";
 import { UIMessage } from "ai";
+import { LoaderIcon } from "lucide-react";
 
 interface ChatMessagePartsProps {
     messageId: string;
@@ -45,6 +46,31 @@ export function ChatMessageParts({
                 >
                     {part.text}
                 </ChatMessage>
+            );
+        }
+
+        if (
+            type === "tool-invocation" &&
+            part.toolInvocation.state !== "result"
+        ) {
+            return (
+                <div
+                    className="flex flex-col items-start w-full max-w-3xl gap-2 px-6 pb-2 group min-h-scroll-anchor"
+                    key={key}
+                >
+                    <LoaderIcon />
+                </div>
+            );
+        }
+
+        if (type === "step-start" && index === parts.length - 1) {
+            return (
+                <div
+                    className="flex flex-col items-start w-full max-w-3xl gap-2 px-6 pb-2 group min-h-scroll-anchor"
+                    key={key}
+                >
+                    <LoaderIcon />
+                </div>
             );
         }
 
