@@ -13,8 +13,6 @@ import {
     UIMessage,
 } from "ai";
 
-export const streamingResponseTimeout = 60; // seconds
-
 export async function POST(request: Request) {
     try {
         const {
