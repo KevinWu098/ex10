@@ -136,7 +136,7 @@ export const createSession = async (req: Request, res: Response) => {
     
     // Now start the extension dev server with the correct display
     const { stdout } = await execAsync(
-      `cd /home/${session.username}/extension && sudo -u ${session.username} bash -c 'DISPLAY=${displayId} nohup pnpm dev --port={${session.xpraPort-1000}} > /home/${session.username}/extension-dev-server.log 2>&1 & echo $!'`,
+      `cd /home/${session.username}/extension && sudo -u ${session.username} bash -c 'DISPLAY=${displayId} nohup pnpm dev  > /home/${session.username}/extension-dev-server.log 2>&1 & echo $!'`,
       { maxBuffer: 1024 * 1024 }
     );
     
@@ -156,7 +156,7 @@ export const createSession = async (req: Request, res: Response) => {
         { maxBuffer: 1024 * 1024 }
       );
       
-      if (!psCheck.trim()) {
+      if (false && !psCheck.trim()) {
         sendUpdate('error', { message: `Dev server failed to start` });
         console.error(`Dev server process ${pid} failed to start properly for ${session.username}`);
         

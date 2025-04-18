@@ -111,6 +111,9 @@ const configureNetworkRestrictions = async (username: string, xpraPort: number):
     // Allow outbound HTTP/HTTPS (for browser functionality)
     await execAsync(`sudo iptables -A USER_${username}_OUT -p tcp --dport 80 -j ACCEPT`);
     await execAsync(`sudo iptables -A USER_${username}_OUT -p tcp --dport 443 -j ACCEPT`);
+
+    // Allow binding to ports 8000-8500 (for development servers)
+    await execAsync(`sudo iptables -A USER_${username}_OUT -p tcp --match multiport --dports 8000:8500 -j ACCEPT`);
     
     // Block access to all other Xpra ports
     await execAsync(`sudo iptables -A USER_${username}_OUT -p tcp --match multiport --dports 9000:9500 -j REJECT`);
