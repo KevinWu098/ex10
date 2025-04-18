@@ -26,7 +26,7 @@ app.post('/updateCode', updateCode);
 app.get('/getSessionDom/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const session = true;//await getSessionById(id);
+    const session = await getSessionById(id);
     
     if (!session) {
       return res.status(404).json({
