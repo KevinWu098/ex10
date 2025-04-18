@@ -38,6 +38,26 @@ export const createSession = async (req: Request, res: Response) => {
         `cp -r extension-template /home/${session.username}/extension && chown -R ${session.username}:${session.username} /home/${session.username}/extension`,
         { maxBuffer: 50 * 1024 * 1024 }
       );
+
+      sendUpdate('running', { message: 'Copying companion extension' });
+      await execAsync(
+        `cp -r companion-extension /home/${session.username}/ex10-companion-extension && chown -R ${session.username}:${session.username} /home/${session.username}/ex10-companion-extension`,
+        { maxBuffer: 50 * 1024 * 1024 }
+      );
+      sendUpdate('running', { message: 'Configuring companion extension' });
+      
+      // Replace the session ID placeholder in background.js
+      try {
+        await execAsync(
+          `sed -i 's/STR_REPLACE_SESSION_ID/${session.id}/g' /home/${session.username}/ex10-companion-extension/background.js`,
+          { maxBuffer: 1024 * 1024 }
+        );
+      } catch (error: any) {
+        console.error(`Error configuring companion extension: ${error.message}`);
+        sendUpdate('error', { message: `Warning: Failed to configure session ID in companion extension` });
+        res.end();
+        return;
+      }
       
       // Install dependencies as the user
       sendUpdate('running', { message: 'Installing modules' });
@@ -49,6 +69,46 @@ export const createSession = async (req: Request, res: Response) => {
     } catch (error: any) {
       sendUpdate('error', { message: `Error setting up extension: ${error.message}` });
       console.error(`Error setting up extension: ${error.message}`);
+      res.end();
+      return;
+    }
+
+    // Patch the libraries to use the companion extension
+    try {
+      sendUpdate('running', { message: 'Patching libraries' });
+      
+      // Find all files containing the load-extension pattern
+      const { stdout: grepResult } = await execAsync(
+        `cd /home/${session.username}/extension && grep -R -n -F -l -- '--load-extension=\${e.join()}' node_modules`,
+        { maxBuffer: 5 * 1024 * 1024 }
+      );
+      
+      if (!grepResult.trim()) {
+        sendUpdate('running', { message: 'No libraries found needing patching' });
+      } else {
+        // Process each file that needs patching
+        const filesToPatch = grepResult.trim().split('\n');
+        sendUpdate('running', { message: `Found ${filesToPatch.length} files to patch` });
+        
+        for (const filePath of filesToPatch) {
+          try {
+            // Replace the pattern with the new one that includes companion extension
+            await execAsync(
+              `cd /home/${session.username}/extension && sed -i 's#--load-extension=\${e.join()}#--load-extension=\${e.join()},/home/${session.username}/ex10-companion-extension#g' "${filePath}"`,
+              { maxBuffer: 1024 * 1024 }
+            );
+            sendUpdate('running', { message: `Patched: ${filePath}` });
+          } catch (patchError: any) {
+            sendUpdate('running', { message: `Warning: Failed to patch ${filePath}: ${patchError.message}` });
+            console.warn(`Failed to patch ${filePath}: ${patchError.message}`);
+          }
+        }
+        
+        sendUpdate('running', { message: 'Library patching complete' });
+      }
+    } catch (error: any) {
+      sendUpdate('error', { message: `Error patching libraries: ${error.message}` });
+      console.error(`Error patching libraries: ${error.message}`);
       res.end();
       return;
     }
