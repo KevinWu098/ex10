@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { DeepPartial } from "ai";
 import { Loader2 } from "lucide-react";
 
-function formatFileContent(
+export function formatFileContent(
     code: DeepPartial<FragmentSchema>["code"] | undefined,
     currentFile: string
 ): string | undefined {
@@ -126,6 +126,7 @@ export const Artifact = memo(
                     <TabsContent
                         value="preview"
                         className="flex h-full"
+                        forceMount // NB: forceMount prevents the preview from being unmounted
                     >
                         {isLoading || !currentPreview ? (
                             <div className="flex flex-col items-center justify-center w-full h-full gap-2">
@@ -138,7 +139,7 @@ export const Artifact = memo(
                             <iframe
                                 className="w-full h-full border-0"
                                 title="Preview"
-                                src={`${process.env.XPRA_SERVER_URL}/session/${currentPreview}`}
+                                src={`${process.env.NEXT_PUBLIC_XPRA_SERVER_URL}/session/${currentPreview}`}
                             />
                         )}
                     </TabsContent>

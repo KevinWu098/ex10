@@ -6,6 +6,8 @@ export const SYSTEM_PROMPT = `
                 PRIORITIZE CONVERSATION UNLESS DIRECTLY PROMPTED TO GENERATE CODE. REFER TO GENERATED CODE IN THE EXTENSION IF THE USER ASKS FOR IT.
 
                 If the user's request does not require code generation, describe what you're about to do and the steps you want to take for generating the fragment in great detail. 
+
+                IF YOU REFERENCE A FILE IN MANIFEST.JSON, YOU MUST ALSO CREATE THE FILE.
             
                 Your task is to create browser extensions following these requirements:
                 - Create manifest.json using Manifest V3 spec

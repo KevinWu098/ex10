@@ -1,7 +1,8 @@
 "use server";
 
-const XPRA_SERVER_URL = process.env.XPRA_SERVER_URL;
-console.log("XPRA_SERVER_URL", XPRA_SERVER_URL);
+import { FragmentSchema } from "@/lib/schema";
+
+const XPRA_SERVER_URL = process.env.NEXT_PUBLIC_XPRA_SERVER_URL;
 
 export async function createXpraSession() {
     try {
@@ -61,20 +62,16 @@ export async function createXpraSession() {
 
 export async function updateXpraSession(
     sessionId: string,
-    filePath: string,
-    content: string
+    code: NonNullable<FragmentSchema["code"]>[number]
 ) {
     try {
+        console.log("sending");
         const response = await fetch(`${XPRA_SERVER_URL}/updateCode`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                sessionId,
-                filePath,
-                content,
-            }),
+            body: JSON.stringify({ sessionId, code }),
         });
 
         if (!response.ok) {

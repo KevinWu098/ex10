@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Artifact } from "@/components/artifact/artifact";
+import { Artifact, formatFileContent } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
 import { type FragmentSchema } from "@/lib/schema";
 import { generateUUID } from "@/lib/utils";
@@ -24,6 +24,22 @@ interface ClientProps {
     initialMessages?: Array<UIMessage>;
 }
 
+const extractCodeFromMessage = (message?: Message): FragmentSchema["code"] => {
+    return (
+        message?.parts
+            ?.filter(
+                (part) =>
+                    part.type === "tool-invocation" && part.toolInvocation?.args
+            )
+            .flatMap((part) => {
+                const args = (part as ToolInvocationUIPart).toolInvocation.args;
+                const code = args.code;
+                return code;
+            })
+            .filter(Boolean) ?? null
+    );
+};
+
 export function Client({ id, initialMessages }: ClientProps) {
     const [initialInput] = useQueryState("initialInput", { defaultValue: "" });
     const [isPreviewLoading, setIsPreviewLoading] = useState(true);
@@ -33,7 +49,7 @@ export function Client({ id, initialMessages }: ClientProps) {
     const {
         messages,
         setMessages,
-        handleSubmit: submit,
+        handleSubmit,
         input,
         setInput,
         append,
@@ -57,80 +73,69 @@ export function Client({ id, initialMessages }: ClientProps) {
         onFinish: async (message) => {
             console.log("onFinish", message);
 
-            // setIsPreviewLoading(true);
+            let session = sessionId;
 
             const code = extractCodeFromMessage(message);
             try {
                 if (!code) {
+                    console.log("[CODE CODE CODE]: No code found");
                     return;
                 }
 
-                if (!sessionId) {
-                    toast.error(
-                        "Could not send code to xpra. Please try again."
+                if (!session) {
+                    toast.info(
+                        "Xpra server not yet initialized... connection currently in progress"
                     );
-                    return;
+                    setCurrentTab("preview");
+
+                    try {
+                        const { sessionId: newSessionId } =
+                            await createXpraSession();
+                        session = newSessionId;
+                        setSessionId(newSessionId);
+                    } catch (error) {
+                        console.error("Failed to create Xpra session:", error);
+                        toast.error("Xpra session not created");
+                        throw error; // propagate upwards
+                    }
                 }
 
+                if (!session) {
+                    toast.error("No session ID found");
+                    throw new Error("No session ID found");
+                }
+
+                setCurrentTab("preview");
+                console.log("[CODE CODE CODE]: Updating code", code);
                 await Promise.all(
-                    code.map((c) =>
-                        updateXpraSession(
-                            sessionId,
-                            c.file_path,
-                            c.file_content
-                        )
-                    )
+                    code.map((c) => {
+                        const cleanedContent = formatFileContent(
+                            code,
+                            c.file_name
+                        );
+
+                        console.log("cleaned content", cleanedContent);
+
+                        return updateXpraSession(session as string, {
+                            ...c,
+                            file_content: cleanedContent ?? "",
+                        });
+                    })
                 );
+
+                setIsPreviewLoading(false);
             } catch (error) {
-                console.error("Failed to update Xpra session:", error);
-                toast.error("Failed to update code in session");
+                console.error(
+                    "Failed to communicate with Xpra session:",
+                    error
+                );
+                toast.error("Failed to communicate with Xpra session");
             }
 
             setCurrentTab("preview");
             // setIsPreviewLoading(false);
         },
     });
-
-    const xpraSessionCreated = useRef(false);
-
-    const handleSubmit = async () => {
-        if (!xpraSessionCreated.current) {
-            xpraSessionCreated.current = true;
-
-            createXpraSession()
-                .then(({ sessionId }) => {
-                    setSessionId(sessionId);
-                    console.log("Xpra session created with ID:", sessionId);
-                    setIsPreviewLoading(false);
-                })
-                .catch((error) => {
-                    console.error("Failed to create Xpra session:", error);
-                    toast.error("Xpra session not created");
-                });
-        }
-
-        submit();
-    };
-
-    const extractCodeFromMessage = (
-        message?: Message
-    ): FragmentSchema["code"] => {
-        return (
-            message?.parts
-                ?.filter(
-                    (part) =>
-                        part.type === "tool-invocation" &&
-                        part.toolInvocation?.args
-                )
-                .flatMap((part) => {
-                    const args = (part as ToolInvocationUIPart).toolInvocation
-                        .args;
-                    const code = args.code;
-                    return code;
-                })
-                .filter(Boolean) ?? null
-        );
-    };
 
     const [fragment, setFragment] = useState<
         DeepPartial<FragmentSchema>["code"]
