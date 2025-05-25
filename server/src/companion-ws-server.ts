@@ -1,6 +1,14 @@
 import { WebSocketServer } from 'ws';
 import { IncomingMessage } from 'http';
 import { getSessionById } from './services/sessionService';
+import * as fs from 'fs';
+import * as https from 'https';
+
+interface SSLConfig {
+  enabled: boolean;
+  certPath: string;
+  keyPath: string;
+}
 
 interface Client {
   socket: any;
@@ -13,11 +21,37 @@ let wss: WebSocketServer | null = null;
 const clients: Map<string, Client> = new Map();
 let connectionCheckInterval: NodeJS.Timeout | null = null;
 
-export function startCompanionServer() {
+export function startCompanionServer(sslConfig?: SSLConfig) {
   if (wss) return; // Already started
   
-  wss = new WebSocketServer({ port: 4926 });
-  console.log('Companion WebSocket server started on port 4926');
+  const WS_PORT = process.env.WS_PORT ? parseInt(process.env.WS_PORT) : 4926;
+
+  if (sslConfig?.enabled) {
+    try {
+      // Create HTTPS server with SSL
+      const httpsOptions = {
+        key: fs.readFileSync(sslConfig.keyPath),
+        cert: fs.readFileSync(sslConfig.certPath)
+      };
+      
+      const httpsServer = https.createServer(httpsOptions);
+      wss = new WebSocketServer({ server: httpsServer });
+      
+      // Start HTTPS server for secure WebSockets
+      httpsServer.listen(WS_PORT, () => {
+        console.log(`Secure Companion WebSocket server (WSS) started on port ${WS_PORT}`);
+      });
+    } catch (error) {
+      console.error('Failed to load SSL certificates for WebSocket server:', error);
+      console.warn('Falling back to insecure WebSocket server');
+      wss = new WebSocketServer({ port: WS_PORT });
+      console.log(`Companion WebSocket server (WS) started on port ${WS_PORT}`);
+    }
+  } else {
+    // Create regular WebSocket server without SSL
+    wss = new WebSocketServer({ port: WS_PORT });
+    console.log(`Companion WebSocket server (WS) started on port ${WS_PORT}`);
+  }
 
   wss.on('connection', (socket, request: IncomingMessage) => {
     const client: Client = {
