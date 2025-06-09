@@ -1,56 +1,41 @@
 import fs from "fs";
-import path from "path";
-import CDP from "chrome-remote-interface";
+import WebSocket from "ws";
 
 const EXTENSION_DIR = "/tmp/extension";
-let client = null;
+const WEBSOCKET_PORT = 8000;
 
-async function connectToChrome() {
-    try {
-        client = await CDP({ port: 9222 });
-        console.log("✅ Connected to Chrome DevTools.");
+const wss = new WebSocket.Server({ port: WEBSOCKET_PORT });
+console.log(
+    `🧠 Hot Reload WebSocket server running on ws://localhost:${WEBSOCKET_PORT}`
+);
 
-        const { Target } = client;
-        const { targetInfos } = await Target.getTargets();
+wss.on("connection", (ws) => {
+    console.log("🧩 Extension connected to hot reload server");
 
-        console.log("🔍 CDP Targets:");
-        for (const t of targetInfos) {
-            console.log(` - ${t.type} | ${t.url} | ${t.title}`);
-        }
-    } catch (e) {
-        console.error("❌ Failed to connect to Chrome. Retrying in 2s...");
-        setTimeout(connectToChrome, 2000);
-    }
-}
-
-async function reloadExtension() {
-    if (!client) return;
-
-    try {
-        const { Runtime } = client;
-
-        await Runtime.evaluate({
-            expression: "chrome.runtime.reload()",
-        });
-
-        console.log("🔁 Reloaded extension.");
-    } catch (err) {
-        console.error("CDP reload error:", err.message);
-    }
-}
-
-function watchDirectory(dir) {
-    console.log(`👀 Watching ${dir} for changes...`);
-    fs.watch(dir, { recursive: true }, (eventType, filename) => {
-        if (filename) {
-            console.log(`📁 Detected ${eventType} on ${filename}`);
-            reloadExtension();
-        }
+    ws.on("message", (msg) => {
+        console.log("🔁 From extension:", msg.toString());
     });
+
+    ws.on("close", () => {
+        console.log("❌ Extension disconnected");
+    });
+});
+
+function notifyClients(changedFile) {
+    const payload = JSON.stringify({ changedFile });
+
+    for (const ws of wss.clients) {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(payload);
+        }
+    }
+
+    console.log(`📦 Change sent to extension: ${changedFile}`);
 }
 
-// Delay to allow Chromium to boot and service worker to wake up
-setTimeout(() => {
-    connectToChrome();
-    watchDirectory(EXTENSION_DIR);
-}, 5000);
+fs.watch(EXTENSION_DIR, { recursive: true }, (eventType, filename) => {
+    if (filename) {
+        console.log(`📁 Detected ${eventType} on ${filename}`);
+        notifyClients(filename);
+    }
+});
