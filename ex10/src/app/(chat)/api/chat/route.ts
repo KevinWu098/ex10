@@ -67,7 +67,7 @@ export async function POST(request: Request) {
                     maxSteps: 5,
                     experimental_activeTools: [
                         "generateExtension",
-                        "getPageContext",
+                        // "getPageContext",
                     ],
                     experimental_transform: smoothStream({ chunking: "word" }),
                     experimental_generateMessageId: generateUUID,
@@ -76,8 +76,9 @@ export async function POST(request: Request) {
                         generateExtension: generateExtension({
                             dataStream,
                         }),
-                        getPageContext,
+                        // getPageContext,
                     },
+                    toolChoice: "required",
                     onFinish: async ({ response }) => {
                         try {
                             const assistantId = response.messages

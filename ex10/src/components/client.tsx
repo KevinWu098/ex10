@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Artifact, formatFileContent } from "@/components/artifact/artifact";
+import { Artifact } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
 import { CodeData, CodeDataSchema } from "@/lib/data";
 import { generateUUID } from "@/lib/utils";
@@ -163,6 +163,19 @@ export function Client({ id, initialMessages }: ClientProps) {
             return;
         }
 
+        if (data.length >= 3) {
+            const lastFive = data.slice(-3);
+            const allEqual = lastFive.every(
+                (item, i, arr) =>
+                    i === 0 || JSON.stringify(item) === JSON.stringify(arr[0])
+            );
+
+            if (allEqual) {
+                stop();
+                return;
+            }
+        }
+
         const result = CodeDataSchema.safeParse(data.at(-1));
         if (!result.success) {
             return;
@@ -190,8 +203,6 @@ export function Client({ id, initialMessages }: ClientProps) {
             initialRender.current = false;
         }
     }, [initialInput, handleSubmit, initialMessages?.length]);
-
-    console.log(data);
 
     return (
         <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">
