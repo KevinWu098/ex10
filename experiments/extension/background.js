@@ -1,1 +1,1 @@
-console.log("Extension background running.");
+console.log("Extension running.");
