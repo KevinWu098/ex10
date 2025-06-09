@@ -12,7 +12,6 @@ export const SYSTEM_PROMPT = `
                 Your task is to create browser extensions following these requirements:
                 - Create manifest.json using Manifest V3 spec
                 - Create content-script.js for page interactions
-                - Think carefully about security and best practices
                 - Write production-ready code
                 - Exclude comments, icons and images
                 - Focus on core functionality only

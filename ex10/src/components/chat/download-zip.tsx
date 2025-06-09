@@ -5,14 +5,13 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { FragmentSchema } from "@/lib/schema";
-import { DeepPartial } from "ai";
+import { CodeData } from "@/lib/data";
 import JSZip from "jszip";
 import { DownloadIcon } from "lucide-react";
 
 interface DownloadZipProps {
     extensionName: string | undefined;
-    code: DeepPartial<FragmentSchema>["code"] | undefined;
+    code: CodeData["content"][];
 }
 
 export function DownloadZip({ extensionName, code }: DownloadZipProps) {

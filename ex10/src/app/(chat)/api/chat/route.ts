@@ -5,7 +5,7 @@ import { getChatById, saveChat, saveMessages } from "@/lib/queries";
 import { SYSTEM_PROMPT } from "@/lib/system";
 import { generateUUID, getMostRecentUserMessage } from "@/lib/utils";
 import { openai } from "@ai-sdk/openai";
-// import { vercel } from "@ai-sdk/vercel";
+import { vercel } from "@ai-sdk/vercel";
 import {
     appendResponseMessages,
     createDataStreamResponse,
@@ -73,7 +73,9 @@ export async function POST(request: Request) {
                     experimental_generateMessageId: generateUUID,
                     toolCallStreaming: true,
                     tools: {
-                        generateExtension: generateExtension(),
+                        generateExtension: generateExtension({
+                            dataStream,
+                        }),
                         getPageContext,
                     },
                     onFinish: async ({ response }) => {
