@@ -55,6 +55,7 @@ export function Client({ id, initialMessages }: ClientProps) {
     const [isPreviewLoading, setIsPreviewLoading] = useState(true);
     const [sessionId, setSessionId] = useState<string>();
     const [currentTab, setCurrentTab] = useState("code");
+    const [currentFile, setCurrentFile] = useState<string>("");
 
     const {
         messages,
@@ -83,6 +84,8 @@ export function Client({ id, initialMessages }: ClientProps) {
         },
         onFinish: async (message) => {
             console.log("onFinish", message);
+
+            setFragment(extractCodeFromMessage(message));
 
             return;
             let session = sessionId;
@@ -147,7 +150,13 @@ export function Client({ id, initialMessages }: ClientProps) {
 
     const [fragment, setFragment] = useState<
         Record<string, CodeData["content"]>
-    >(() => extractCodeFromMessage(initialMessages?.at(-1)));
+    >({});
+
+    useEffect(() => {
+        const code = extractCodeFromMessage(initialMessages?.at(-1));
+        setFragment(code);
+        setCurrentFile(Object.keys(code).at(0) ?? "");
+    }, []);
 
     useEffect(() => {
         if (!data) {
@@ -156,21 +165,17 @@ export function Client({ id, initialMessages }: ClientProps) {
 
         const result = CodeDataSchema.safeParse(data.at(-1));
         if (!result.success) {
-            console.error("Invalid code data:", result.error);
             return;
         }
         const safeData = result.data;
 
-        if (!safeData.content) {
+        const { file_path: filePath, file_path_finished: filePathFinished } =
+            safeData.content;
+        if (!filePath || !filePathFinished) {
             return;
         }
 
-        if (!safeData.content.file_path) {
-            return;
-        }
-
-        const filePath = safeData.content.file_path;
-
+        setCurrentFile(filePath);
         setFragment((prev) => ({
             ...prev,
             [filePath]: safeData.content,
@@ -185,6 +190,8 @@ export function Client({ id, initialMessages }: ClientProps) {
             initialRender.current = false;
         }
     }, [initialInput, handleSubmit, initialMessages?.length]);
+
+    console.log(data);
 
     return (
         <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">
@@ -205,6 +212,8 @@ export function Client({ id, initialMessages }: ClientProps) {
                 currentPreview={sessionId}
                 currentTab={currentTab}
                 setCurrentTab={setCurrentTab}
+                currentFile={currentFile}
+                setCurrentFile={setCurrentFile}
             />
         </div>
     );

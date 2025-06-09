@@ -6,8 +6,6 @@ export const schema = z.object({
             
             Alternatively, if no code needs to be generated, simply respond to the user with a response. This response without code should be a natural response, not a commentary about the response.
 
-            Generate the manifest first.
-
             DO NOT ALWAYS GENERATE CODE. ONLY GENERATE CODE WHEN NECESSARY. DO NOT GENERATE CODE AS AN EXAMPLE IF IT IS ALREADY PRESENT.
             `
     ),
@@ -21,6 +19,9 @@ export const schema = z.object({
                 .describe(
                     "Relative path to the file, including the file name."
                 ),
+            file_path_finished: z
+                .boolean()
+                .describe("Detect if the file path is finished."),
             file_content: z.string().describe("Content of the file."),
             file_finished: z
                 .boolean()

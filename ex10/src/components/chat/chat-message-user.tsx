@@ -39,6 +39,7 @@ export type MessageUserProps = {
     id: string;
     setMessages: UseChatHelpers["setMessages"];
     reload: UseChatHelpers["reload"];
+    isLoading: boolean;
 };
 
 export function ChatMessageUser({
@@ -54,6 +55,7 @@ export function ChatMessageUser({
     setMessages,
     id: id,
     reload,
+    isLoading,
 }: MessageUserProps) {
     const [editInput, setEditInput] = useState(children);
     const [isEditing, setIsEditing] = useState(false);
@@ -93,6 +95,10 @@ export function ChatMessageUser({
     };
 
     const handleReload = async () => {
+        if (isLoading) {
+            return;
+        }
+
         await deleteTrailingMessages({ id });
 
         setMessages((messages) => {
@@ -245,6 +251,7 @@ export function ChatMessageUser({
                         className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent transition"
                         aria-label="Regenerate"
                         onClick={handleReload}
+                        disabled={isLoading}
                         type="button"
                     >
                         <RotateCwIcon className="size-4" />

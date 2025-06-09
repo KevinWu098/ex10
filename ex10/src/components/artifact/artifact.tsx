@@ -27,6 +27,8 @@ interface ArtifactProps {
     currentTab: string;
     setCurrentTab: (tab: string) => void;
     currentPreview: string | undefined;
+    currentFile: string;
+    setCurrentFile: (file: string) => void;
 }
 
 export const Artifact = memo(
@@ -36,20 +38,11 @@ export const Artifact = memo(
         currentTab,
         setCurrentTab,
         currentPreview,
+        currentFile,
+        setCurrentFile,
     }: ArtifactProps) => {
-        const [currentFile, setCurrentFile] = useState<string>("");
-
         const code = Object.values(fragment);
         const content = formatFileContent(code, currentFile);
-
-        // ! This is a hack.
-        useEffect(() => {
-            const firstFileName = code?.at(0)?.file_name;
-
-            if (firstFileName && !currentFile) {
-                setCurrentFile(firstFileName);
-            }
-        }, [code, currentFile]);
 
         if (!code) {
             return null;

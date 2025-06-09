@@ -22,6 +22,8 @@ export const generateExtension = ({
                 schema,
                 prompt: description,
                 system: SYSTEM_PROMPT,
+                mode: "tool",
+                maxRetries: 0,
             });
 
             dataStream.writeData({

@@ -7,6 +7,8 @@ export const SYSTEM_PROMPT = `
 
                 If the user's request does not require code generation, describe what you're about to do and the steps you want to take for generating the fragment in great detail. 
 
+                When initializing the extension, prefer GENERATING THE MANIFEST FIRST. Make sure to generate all files required.
+
                 IF YOU REFERENCE A FILE IN MANIFEST.JSON, YOU MUST ALSO CREATE THE FILE.
             
                 Your task is to create browser extensions following these requirements:

@@ -16,6 +16,7 @@ interface ChatMessagePartsProps {
     reload: UseChatHelpers["reload"];
     setMessages: UseChatHelpers["setMessages"];
     message: Message;
+    isLoading: boolean;
 }
 
 export function ChatMessageParts({
@@ -27,6 +28,7 @@ export function ChatMessageParts({
     reload,
     setMessages,
     message,
+    isLoading,
 }: ChatMessagePartsProps) {
     return parts?.map((part, index) => {
         const { type } = part;
@@ -43,6 +45,7 @@ export function ChatMessageParts({
                     hasScrollAnchor={hasScrollAnchor}
                     message={message}
                     setMessages={setMessages}
+                    isLoading={isLoading}
                 >
                     {part.text}
                 </ChatMessage>
@@ -55,7 +58,7 @@ export function ChatMessageParts({
         ) {
             return (
                 <div
-                    className="flex flex-col items-start w-full max-w-3xl gap-2 px-6 pb-2 group min-h-scroll-anchor"
+                    className="group min-h-scroll-anchor flex w-full max-w-3xl flex-col items-start gap-2 px-6 pb-2"
                     key={key}
                 >
                     <LoaderIcon />
@@ -66,7 +69,7 @@ export function ChatMessageParts({
         if (type === "step-start" && index === parts.length - 1) {
             return (
                 <div
-                    className="flex flex-col items-start w-full max-w-3xl gap-2 px-6 pb-2 group min-h-scroll-anchor"
+                    className="group min-h-scroll-anchor flex w-full max-w-3xl flex-col items-start gap-2 px-6 pb-2"
                     key={key}
                 >
                     <LoaderIcon />
