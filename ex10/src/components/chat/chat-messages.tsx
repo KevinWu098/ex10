@@ -49,6 +49,7 @@ export const ChatMessages = memo(
                                 messageRole={message.role}
                                 parts={message.parts}
                                 isLast={isLast}
+                                isLoading={isLoading}
                                 // onDelete={onDelete}
                                 // onEdit={onEdit}
                                 // onReload={onReload}

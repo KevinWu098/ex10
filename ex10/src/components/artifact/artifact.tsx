@@ -5,13 +5,12 @@ import { ArtifactCode } from "@/components/artifact/artifact-code";
 import { ArtifactFileNames } from "@/components/artifact/artifact-file-names";
 import { DownloadZip } from "@/components/chat/download-zip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FragmentSchema } from "@/lib/schema";
+import { CodeData } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { DeepPartial } from "ai";
 import { Loader2 } from "lucide-react";
 
 export function formatFileContent(
-    code: DeepPartial<FragmentSchema>["code"] | undefined,
+    code: CodeData["content"][],
     currentFile: string
 ): string | undefined {
     const content = code?.find(
@@ -23,46 +22,40 @@ export function formatFileContent(
 }
 
 interface ArtifactProps {
-    code: DeepPartial<FragmentSchema>["code"] | undefined;
+    fragment: Record<string, CodeData["content"]>;
     isLoading: boolean;
     currentTab: string;
     setCurrentTab: (tab: string) => void;
     currentPreview: string | undefined;
+    currentFile: string;
+    setCurrentFile: (file: string) => void;
 }
 
 export const Artifact = memo(
     ({
-        code,
+        fragment,
         isLoading,
         currentTab,
         setCurrentTab,
         currentPreview,
+        currentFile,
+        setCurrentFile,
     }: ArtifactProps) => {
-        const [currentFile, setCurrentFile] = useState<string>("");
-
+        const code = Object.values(fragment);
         const content = formatFileContent(code, currentFile);
 
-        // ! This is a hack.
-        useEffect(() => {
-            const firstFileName = code?.at(0)?.file_name;
-
-            if (firstFileName && !currentFile) {
-                setCurrentFile(firstFileName);
-            }
-        }, [code, currentFile]);
-
-        if (!code) {
+        if (!code.length) {
             return null;
         }
 
         return (
             <Tabs
                 defaultValue="code"
-                className="gap-0 overflow-hidden grow"
+                className="grow gap-0 overflow-hidden"
                 value={currentTab}
                 onValueChange={setCurrentTab}
             >
-                <div className="flex justify-between p-2 mb-2 border rounded-sm shadow-xs border-input">
+                <div className="border-input mb-2 flex justify-between rounded-sm border p-2 shadow-xs">
                     <TabsList className="rounded-sm">
                         <TabsTrigger
                             value="code"
@@ -125,11 +118,14 @@ export const Artifact = memo(
 
                     <TabsContent
                         value="preview"
-                        className="flex h-full"
+                        className={cn(
+                            "flex h-full",
+                            currentTab === "code" ? "hidden" : ""
+                        )}
                         forceMount // NB: forceMount prevents the preview from being unmounted
                     >
                         {isLoading || !currentPreview ? (
-                            <div className="flex flex-col items-center justify-center w-full h-full gap-2">
+                            <div className="flex h-full w-full flex-col items-center justify-center gap-2">
                                 <Loader2 className="size-8 animate-spin" />
                                 <span className="text-lg">
                                     Loading preview...
@@ -137,7 +133,7 @@ export const Artifact = memo(
                             </div>
                         ) : (
                             <iframe
-                                className="w-full h-full border-0"
+                                className="h-full w-full border-0"
                                 title="Preview"
                                 src={`${process.env.NEXT_PUBLIC_XPRA_SERVER_URL}/session/${currentPreview}`}
                             />

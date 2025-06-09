@@ -1,9 +1,8 @@
 import { ArtifactFileName } from "@/components/artifact/artifact-file-name";
-import type { FragmentSchema } from "@/lib/schema";
-import { DeepPartial } from "ai";
+import { CodeData } from "@/lib/data";
 
 interface ArtifactFileNamesProps {
-    code: DeepPartial<FragmentSchema>["code"] | undefined;
+    code: CodeData["content"][];
     currentFile: string;
     setCurrentFile: (file: string) => void;
 }

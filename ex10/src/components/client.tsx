@@ -3,40 +3,50 @@
 import { useEffect, useRef, useState } from "react";
 import { Artifact, formatFileContent } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
-import { type FragmentSchema } from "@/lib/schema";
+import { CodeData, CodeDataSchema } from "@/lib/data";
 import { generateUUID } from "@/lib/utils";
 import { createXpraSession, updateXpraSession } from "@/lib/xpra";
 import { useChat } from "@ai-sdk/react";
-import { DeepPartial, Message, ToolInvocation, UIMessage } from "ai";
+import { Message, ToolInvocation, UIMessage } from "ai";
 import { useQueryState } from "nuqs";
 import { toast } from "sonner";
 
-type ToolInvocationUIPart = {
-    type: "tool-invocation";
-    /**
-     * The tool invocation.
-     */
-    toolInvocation: ToolInvocation;
-};
+type ToolInvocationUIPart = Extract<
+    NonNullable<Message["parts"]>[number],
+    {
+        type: "tool-invocation";
+    }
+>;
 
 interface ClientProps {
     id: string;
     initialMessages?: Array<UIMessage>;
 }
 
-const extractCodeFromMessage = (message?: Message): FragmentSchema["code"] => {
-    return (
-        message?.parts
-            ?.filter(
-                (part) =>
-                    part.type === "tool-invocation" && part.toolInvocation?.args
-            )
-            .flatMap((part) => {
-                const args = (part as ToolInvocationUIPart).toolInvocation.args;
-                const code = args.code;
-                return code;
-            })
-            .filter(Boolean) ?? null
+const extractCodeFromMessage = (
+    message?: Message
+): Record<string, CodeData["content"]> => {
+    const codeParts = (message?.parts?.filter(
+        (part) =>
+            part.type === "tool-invocation" &&
+            part.toolInvocation &&
+            part.toolInvocation.state === "result"
+    ) ?? []) as ToolInvocationUIPart[];
+
+    return codeParts.reduce(
+        (acc, part) => {
+            const code = (
+                part.toolInvocation as Extract<
+                    ToolInvocation,
+                    { state: "result" }
+                >
+            ).result;
+            if (code) {
+                acc[code.file_path] = code;
+            }
+            return acc;
+        },
+        {} as Record<string, CodeData["content"]>
     );
 };
 
@@ -45,6 +55,7 @@ export function Client({ id, initialMessages }: ClientProps) {
     const [isPreviewLoading, setIsPreviewLoading] = useState(true);
     const [sessionId, setSessionId] = useState<string>();
     const [currentTab, setCurrentTab] = useState("code");
+    const [currentFile, setCurrentFile] = useState<string>("");
 
     const {
         messages,
@@ -57,6 +68,7 @@ export function Client({ id, initialMessages }: ClientProps) {
         stop,
         reload,
         error,
+        data,
     } = useChat({
         id,
         body: { id },
@@ -73,12 +85,12 @@ export function Client({ id, initialMessages }: ClientProps) {
         onFinish: async (message) => {
             console.log("onFinish", message);
 
-            let session = sessionId;
+            setFragment(extractCodeFromMessage(message));
 
-            const code = extractCodeFromMessage(message);
+            return;
+            let session = sessionId;
             try {
-                if (!code) {
-                    console.log("[CODE CODE CODE]: No code found");
+                if (!fragment) {
                     return;
                 }
 
@@ -106,22 +118,21 @@ export function Client({ id, initialMessages }: ClientProps) {
                 }
 
                 setCurrentTab("preview");
-                console.log("[CODE CODE CODE]: Updating code", code);
-                await Promise.all(
-                    code.map((c) => {
-                        const cleanedContent = formatFileContent(
-                            code,
-                            c.file_name
-                        );
+                // await Promise.all(
+                //     code.map((c) => {
+                //         const cleanedContent = formatFileContent(
+                //             code,
+                //             c.file_name
+                //         );
 
-                        console.log("cleaned content", cleanedContent);
+                //         console.log("cleaned content", cleanedContent);
 
-                        return updateXpraSession(session as string, {
-                            ...c,
-                            file_content: cleanedContent ?? "",
-                        });
-                    })
-                );
+                //         return updateXpraSession(session as string, {
+                //             ...c,
+                //             file_content: cleanedContent ?? "",
+                //         });
+                //     })
+                // );
 
                 setIsPreviewLoading(false);
             } catch (error) {
@@ -138,20 +149,38 @@ export function Client({ id, initialMessages }: ClientProps) {
     });
 
     const [fragment, setFragment] = useState<
-        DeepPartial<FragmentSchema>["code"]
-    >(() => extractCodeFromMessage(initialMessages?.at(-1)));
-
-    const lastMessage = messages.at(-1);
+        Record<string, CodeData["content"]>
+    >({});
 
     useEffect(() => {
-        const flattenedArgs = extractCodeFromMessage(lastMessage);
+        const code = extractCodeFromMessage(initialMessages?.at(-1));
+        setFragment(code);
+        setCurrentFile(Object.keys(code).at(0) ?? "");
+    }, []);
 
-        if (!flattenedArgs?.length) {
+    useEffect(() => {
+        if (!data) {
             return;
         }
 
-        setFragment(flattenedArgs);
-    }, [messages, lastMessage]);
+        const result = CodeDataSchema.safeParse(data.at(-1));
+        if (!result.success) {
+            return;
+        }
+        const safeData = result.data;
+
+        const { file_path: filePath, file_path_finished: filePathFinished } =
+            safeData.content;
+        if (!filePath || !filePathFinished) {
+            return;
+        }
+
+        setCurrentFile(filePath);
+        setFragment((prev) => ({
+            ...prev,
+            [filePath]: safeData.content,
+        }));
+    }, [data]);
 
     // ! this is a hack
     const initialRender = useRef(true);
@@ -162,8 +191,10 @@ export function Client({ id, initialMessages }: ClientProps) {
         }
     }, [initialInput, handleSubmit, initialMessages?.length]);
 
+    console.log(data);
+
     return (
-        <div className="flex flex-row w-full h-full max-h-full gap-4 p-2">
+        <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">
             <Chat
                 input={input}
                 messages={messages}
@@ -176,11 +207,13 @@ export function Client({ id, initialMessages }: ClientProps) {
             />
 
             <Artifact
-                code={fragment}
+                fragment={fragment}
                 isLoading={isPreviewLoading}
                 currentPreview={sessionId}
                 currentTab={currentTab}
                 setCurrentTab={setCurrentTab}
+                currentFile={currentFile}
+                setCurrentFile={setCurrentFile}
             />
         </div>
     );

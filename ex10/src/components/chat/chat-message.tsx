@@ -10,7 +10,7 @@ type MessageProps = {
     id: string;
     attachments?: Message["experimental_attachments"];
     isLast?: boolean;
-
+    isLoading: boolean;
     hasScrollAnchor?: boolean;
     setMessages: UseChatHelpers["setMessages"];
     reload: UseChatHelpers["reload"];
@@ -23,10 +23,10 @@ export function ChatMessage({
     id,
     attachments,
     isLast,
-
     setMessages,
     reload,
     hasScrollAnchor,
+    isLoading,
 }: MessageProps) {
     const [copied, setCopied] = useState(false);
 
@@ -47,6 +47,7 @@ export function ChatMessage({
                 attachments={attachments}
                 setMessages={setMessages}
                 reload={reload}
+                isLoading={isLoading}
             >
                 {children}
             </ChatMessageUser>

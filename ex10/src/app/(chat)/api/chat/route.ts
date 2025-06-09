@@ -5,6 +5,7 @@ import { getChatById, saveChat, saveMessages } from "@/lib/queries";
 import { SYSTEM_PROMPT } from "@/lib/system";
 import { generateUUID, getMostRecentUserMessage } from "@/lib/utils";
 import { openai } from "@ai-sdk/openai";
+import { vercel } from "@ai-sdk/vercel";
 import {
     appendResponseMessages,
     createDataStreamResponse,
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
             execute: (dataStream) => {
                 const result = streamText({
                     model: openai("gpt-4o-mini"),
+                    // model: vercel("v0-1.0-md"),
                     system: SYSTEM_PROMPT,
                     messages,
                     maxSteps: 5,
@@ -71,7 +73,9 @@ export async function POST(request: Request) {
                     experimental_generateMessageId: generateUUID,
                     toolCallStreaming: true,
                     tools: {
-                        generateExtension: generateExtension(),
+                        generateExtension: generateExtension({
+                            dataStream,
+                        }),
                         getPageContext,
                     },
                     onFinish: async ({ response }) => {
@@ -123,7 +127,8 @@ export async function POST(request: Request) {
                     sendReasoning: true,
                 });
             },
-            onError: () => {
+            onError: (e) => {
+                console.error(e);
                 return "Oops, an error occurred!";
             },
         });

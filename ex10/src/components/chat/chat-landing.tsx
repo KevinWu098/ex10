@@ -98,7 +98,7 @@ export function ChatLanding({ id }: ChatLandingProps) {
 
                 <ChatSuggestions
                     suggestions={[
-                        "Add WHOIS information to Vercel Domains search",
+                        // "Add WHOIS information to Vercel Domains search",
                         "Open Github PR links in new tabs",
                         "Make the page background red",
                     ]}
