@@ -1,17 +1,16 @@
 #!/bin/bash
+set -e
 
-# Start Chrome via Xpra virtual display
-xpra start :100 \
-  --bind-tcp=0.0.0.0:14500 \
-  --html=on \
-  --start-child="chromium-browser --no-sandbox \
-    --disable-gpu \
-    --remote-debugging-port=9222 \
-    --load-extension=/tmp/extension \
-    --user-data-dir=/tmp/profile"
+# Start Xpra on :100 with TCP
+xpra start \
+    --bind-tcp=0.0.0.0:10000 \
+    --html=on \
+    --daemon=yes \
+    --exit-with-children=no \
+    --start-child="chromium --no-sandbox --disable-gpu --disable-software-rasterizer --load-extension=/tmp/extension --disable-extensions-except=/tmp/extension"
 
-# Wait for Chrome to initialize
-sleep 5
+# Optional: Wait for things to initialize
+sleep 3
 
-# Start file watcher for hot reload
+# Run the reload watcher (assumes it's non-blocking or exits cleanly)
 node /app/reload-watcher.mjs

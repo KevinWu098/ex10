@@ -1,4 +1,5 @@
-import chokidar from "chokidar";
+import fs from "fs";
+import path from "path";
 import CDP from "chrome-remote-interface";
 
 const EXTENSION_DIR = "/tmp/extension";
@@ -37,9 +38,14 @@ async function reloadExtension() {
     }
 }
 
-chokidar.watch(EXTENSION_DIR, { ignoreInitial: true }).on("all", () => {
-    console.log("Detected change in extension. Attempting reload...");
-    reloadExtension();
-});
+function watchDirectory(dir) {
+    fs.watch(dir, { recursive: true }, (eventType, filename) => {
+        if (filename) {
+            console.log(`Detected ${eventType} on ${filename}`);
+            reloadExtension();
+        }
+    });
+}
 
 connectToChrome();
+watchDirectory(EXTENSION_DIR);
