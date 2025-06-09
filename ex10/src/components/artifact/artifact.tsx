@@ -44,7 +44,7 @@ export const Artifact = memo(
         const code = Object.values(fragment);
         const content = formatFileContent(code, currentFile);
 
-        if (!code) {
+        if (!code.length) {
             return null;
         }
 

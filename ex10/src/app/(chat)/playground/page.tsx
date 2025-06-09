@@ -10,8 +10,6 @@ export default function Page() {
         schema: schema,
     });
 
-    console.log(object);
-
     return (
         <div>
             Playground{" "}
