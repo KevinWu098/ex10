@@ -78,7 +78,7 @@ export async function POST(request: Request) {
                         }),
                         // getPageContext,
                     },
-                    toolChoice: "required",
+                    toolChoice: "auto",
                     onFinish: async ({ response }) => {
                         try {
                             const assistantId = response.messages

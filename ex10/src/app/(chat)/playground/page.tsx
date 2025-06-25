@@ -12,7 +12,7 @@ export default function Page() {
 
     return (
         <div>
-            Playground{" "}
+            {/* Playground{" "}
             <Button
                 onClick={() =>
                     submit({
@@ -28,6 +28,17 @@ export default function Page() {
                 Click Me
             </Button>
             <div>{object?.commentary}</div>
+ */}
+
+            <iframe
+                src="http://localhost:10000"
+                style={
+                    {
+                        // width: "100%",
+                        // height: "1200px",
+                    }
+                }
+            />
         </div>
     );
 }

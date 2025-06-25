@@ -16,6 +16,8 @@ export const SYSTEM_PROMPT = `
 
                 Analyze requirements thoroughly before responding.
                 Explain your implementation choices clearly.
+
+                DO NOT CREATE THE SAME FILE MULTIPLE TIMES. DO NOT OUTPUT CODE IN TEXT IF YOU'VE WRITTEN IT USING A TOOL CALL.
                 `;
 
 // ==== DEVELOPER PROMPT ====

@@ -12,16 +12,16 @@ export const generateExtension = ({
     tool({
         description: `Create/edit files in a multi-file browser extension. Make sure to stick to the schema.`,
         parameters: z.object({
+            file_name: z.string(),
             description: z.string(),
         }),
-        execute: async ({ description }) => {
+        execute: async ({ file_name, description }) => {
             let draftCode: Partial<FragmentSchema["code"]> | null = null;
 
             const { fullStream } = streamObject({
                 model: openai("gpt-4o-mini"),
                 schema,
-                prompt: description,
-                system: SYSTEM_PROMPT,
+                prompt: file_name + " " + description,
                 mode: "tool",
                 maxRetries: 0,
             });
