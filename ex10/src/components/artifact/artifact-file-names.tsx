@@ -12,10 +12,6 @@ export function ArtifactFileNames({
     currentFile,
     setCurrentFile,
 }: ArtifactFileNamesProps) {
-    if (!code) {
-        return null;
-    }
-
     return code.map((files, index) => (
         <ArtifactFileName
             key={index}
