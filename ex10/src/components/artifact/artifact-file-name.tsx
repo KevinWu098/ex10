@@ -6,7 +6,7 @@ import { DeepPartial } from "ai";
 import { FileText } from "lucide-react";
 
 interface ArtifactFileNameProps {
-    files: NonNullable<DeepPartial<FragmentSchema>["code"]>[number];
+    files: FragmentSchema["code"];
     currentFile: string;
     setCurrentFile: (file: string) => void;
 }

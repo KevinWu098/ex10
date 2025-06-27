@@ -62,7 +62,7 @@ export async function createXpraSession() {
 
 export async function updateXpraSession(
     sessionId: string,
-    code: NonNullable<FragmentSchema["code"]>[number]
+    code: FragmentSchema["code"]
 ) {
     try {
         console.log("sending");
