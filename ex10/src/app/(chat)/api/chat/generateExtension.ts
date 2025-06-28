@@ -1,6 +1,5 @@
+import { getModel } from "@/lib/models";
 import { FragmentSchema, schema } from "@/lib/schema";
-import { SYSTEM_PROMPT } from "@/lib/system";
-import { openai } from "@ai-sdk/openai";
 import { DataStreamWriter, streamObject, tool } from "ai";
 import { z } from "zod";
 
@@ -19,7 +18,7 @@ export const generateExtension = ({
             let draftCode: Partial<FragmentSchema["code"]> | null = null;
 
             const { fullStream } = streamObject({
-                model: openai("gpt-4o-mini"),
+                model: getModel(),
                 schema,
                 prompt: file_name + " " + description,
                 mode: "tool",
@@ -33,6 +32,8 @@ export const generateExtension = ({
 
             for await (const delta of fullStream) {
                 const { type } = delta;
+
+                console.log("delta", delta);
 
                 if (type === "object") {
                     const { object } = delta;

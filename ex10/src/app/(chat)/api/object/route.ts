@@ -3,9 +3,9 @@
 // import { toPrompt } from "@/lib/prompt";
 // import ratelimit from "@/lib/ratelimit";
 // import { Templates } from "@/lib/templates";
+import { getModel } from "@/lib/models";
 import { schema } from "@/lib/schema";
 import { SYSTEM_PROMPT } from "@/lib/system";
-import { createOpenAI } from "@ai-sdk/openai";
 import { CoreMessage, streamObject } from "ai";
 
 export const maxDuration = 60;
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
     try {
         const stream = streamObject({
-            model: createOpenAI()("gpt-4o-mini"),
+            model: getModel(),
             schema,
             system: SYSTEM_PROMPT,
             messages,

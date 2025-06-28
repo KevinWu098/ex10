@@ -1,0 +1,26 @@
+{
+    "name": "@cloudflare/sandbox-example",
+    "version": "1.0.0",
+    "type": "module",
+    "private": true,
+    "description": "An example of using the sandbox package",
+    "scripts": {
+        "start": "wrangler dev",
+        "deploy": "wrangler deploy",
+        "build": "bun build app/index.tsx --outdir public/dist"
+    },
+    "dependencies": {
+        "@cloudflare/sandbox": "^0.0.5",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+    },
+    "devDependencies": {
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "bun-types": "latest",
+        "typescript": "^5.0.0",
+        "wrangler": "^4.22.0"
+    },
+    "author": "",
+    "license": "MIT"
+}

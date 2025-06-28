@@ -1,11 +1,10 @@
 import { generateExtension } from "@/app/(chat)/api/chat/generateExtension";
 import { getPageContext } from "@/app/(chat)/api/chat/getPageContext";
 import { generateTitleFromUserMessage } from "@/lib/actions";
+import { getModel } from "@/lib/models";
 import { getChatById, saveChat, saveMessages } from "@/lib/queries";
 import { SYSTEM_PROMPT } from "@/lib/system";
 import { generateUUID, getMostRecentUserMessage } from "@/lib/utils";
-import { openai } from "@ai-sdk/openai";
-import { vercel } from "@ai-sdk/vercel";
 import {
     appendResponseMessages,
     createDataStreamResponse,
@@ -60,8 +59,7 @@ export async function POST(request: Request) {
         return createDataStreamResponse({
             execute: (dataStream) => {
                 const result = streamText({
-                    model: openai("gpt-4o-mini"),
-                    // model: vercel("v0-1.0-md"),
+                    model: getModel(),
                     system: SYSTEM_PROMPT,
                     messages,
                     maxSteps: 5,

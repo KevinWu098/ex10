@@ -2,8 +2,8 @@
 
 import db from "@/db";
 import { Chat, message } from "@/db/schema";
+import { getModel } from "@/lib/models";
 import { getChatById, getMessageById, saveChat } from "@/lib/queries";
-import { openai } from "@ai-sdk/openai";
 import { generateText, Message } from "ai";
 import { and, eq, gte, inArray } from "drizzle-orm";
 
@@ -13,7 +13,7 @@ export async function generateTitleFromUserMessage({
     message: Message;
 }) {
     const { text: title } = await generateText({
-        model: openai("gpt-4o-mini"),
+        model: getModel(),
         system: `\n
       - you will generate a short title based on the first message a user begins a conversation with
       - ensure it is not more than 80 characters long

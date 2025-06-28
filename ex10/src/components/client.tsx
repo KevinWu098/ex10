@@ -163,6 +163,8 @@ export function Client({ id, initialMessages }: ClientProps) {
             return;
         }
 
+        console.log("data", data);
+
         if (data.length >= 3) {
             const lastFive = data.slice(-3);
             const allEqual = lastFive.every(

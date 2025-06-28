@@ -1,4 +1,6 @@
 import { ChatMessage } from "@/components/chat/chat-message";
+import { Message as MessageContainer } from "@/components/ui/message";
+import { cn } from "@/lib/utils";
 import { Message, UseChatHelpers } from "@ai-sdk/react";
 import { UIMessage } from "ai";
 import { LoaderIcon } from "lucide-react";
@@ -52,29 +54,36 @@ export function ChatMessageParts({
             );
         }
 
-        if (
-            type === "tool-invocation" &&
-            part.toolInvocation.state !== "result"
-        ) {
-            return (
-                <div
-                    className="group min-h-scroll-anchor flex w-full max-w-3xl flex-col items-start gap-2 px-6 pb-2"
-                    key={key}
-                >
-                    <LoaderIcon />
-                </div>
-            );
-        }
+        if (type === "tool-invocation") {
+            const previousPart = parts.at(Math.max(0, index - 1));
+            if (
+                previousPart?.type === "tool-invocation" &&
+                previousPart.toolInvocation.state !== "result"
+            ) {
+                return null;
+            }
 
-        if (type === "step-start" && index === parts.length - 1) {
-            return (
-                <div
-                    className="group min-h-scroll-anchor flex w-full max-w-3xl flex-col items-start gap-2 px-6 pb-2"
-                    key={key}
-                >
-                    <LoaderIcon />
-                </div>
-            );
+            if (part.toolInvocation.state !== "result") {
+                return (
+                    <div
+                        className="group min-h-scroll-anchor flex w-full max-w-3xl flex-col items-start gap-2 px-6 pb-2"
+                        key={key}
+                    >
+                        <LoaderIcon />
+                    </div>
+                );
+            }
+
+            // TODO: Add tool invocation result
+            return null;
+            // <MessageContainer
+            //     className={cn(
+            //         "group flex w-full max-w-3xl flex-1 items-start gap-4 px-6 pb-2",
+            //         hasScrollAnchor && "min-h-scroll-anchor"
+            //     )}
+            // >
+            //     foobar
+            // </MessageContainer>
         }
 
         return null;
