@@ -15,12 +15,14 @@ interface CommandResult {
     timestamp: Date;
 }
 
-function REPL() {
+function App() {
     const [client, setClient] = useState<HttpClient | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<
         "disconnected" | "connecting" | "connected"
     >("disconnected");
     const [sessionId, setSessionId] = useState<string | null>(null);
+    const [lastPingTime, setLastPingTime] = useState<number | null>(null);
+    const [pingInterval, setPingInterval] = useState<number | null>(null);
     const [commandInput, setCommandInput] = useState("");
     const [results, setResults] = useState<CommandResult[]>([]);
     const [isExecuting, setIsExecuting] = useState(false);
@@ -108,14 +110,16 @@ function REPL() {
 
         setClient(httpClient);
 
-        // Initialize connection by creating a session
+        // Initialize connection
         const initializeConnection = async () => {
             try {
                 setConnectionStatus("connecting");
 
                 // Test connection with ping
+                const startTime = Date.now();
                 await httpClient.ping();
-                console.log("Server is reachable");
+                const endTime = Date.now();
+                setLastPingTime(endTime - startTime);
 
                 // Create a session
                 const session = await httpClient.createSession();
@@ -130,8 +134,26 @@ function REPL() {
 
         initializeConnection();
 
+        // Setup periodic ping
+        const interval = setInterval(async () => {
+            if (client && connectionStatus === "connected") {
+                try {
+                    const startTime = Date.now();
+                    await httpClient.ping();
+                    const endTime = Date.now();
+                    setLastPingTime(endTime - startTime);
+                } catch (error) {
+                    console.error("Ping failed:", error);
+                    setConnectionStatus("disconnected");
+                }
+            }
+        }, 5000);
+
+        setPingInterval(interval);
+
         // Cleanup on unmount
         return () => {
+            if (interval) clearInterval(interval);
             if (httpClient) {
                 httpClient.clearSession();
             }
@@ -270,13 +292,13 @@ function REPL() {
         setResults([]);
     };
 
-    const getStatusColor = (status: CommandResult["status"]) => {
-        switch (status) {
-            case "running":
-                return "text-blue-500";
-            case "completed":
+    const getStatusColor = () => {
+        switch (connectionStatus) {
+            case "connected":
                 return "text-green-500";
-            case "error":
+            case "connecting":
+                return "text-yellow-500";
+            case "disconnected":
                 return "text-red-500";
             default:
                 return "text-gray-500";
@@ -297,150 +319,58 @@ function REPL() {
     };
 
     return (
-        <div className="repl-container">
-            <div className="header">
-                <h1>HTTP REPL</h1>
-                <div className={`connection-status ${connectionStatus}`}>
-                    {connectionStatus === "connected"
-                        ? `Connected (${sessionId})`
-                        : connectionStatus === "connecting"
-                        ? "Connecting..."
-                        : "Disconnected"}
+        <div className="container mx-auto p-4">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+                <h1 className="text-2xl font-bold mb-4">
+                    Server Connection Test
+                </h1>
+
+                <div className="mb-4">
+                    <p className="font-semibold">
+                        Status:
+                        <span className={`ml-2 ${getStatusColor()}`}>
+                            {connectionStatus.charAt(0).toUpperCase() +
+                                connectionStatus.slice(1)}
+                        </span>
+                    </p>
                 </div>
-            </div>
 
-            <div className="command-bar">
-                <span className="command-prompt">$</span>
-                <input
-                    type="text"
-                    className="command-input"
-                    value={commandInput}
-                    onChange={(e) => setCommandInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Enter command (e.g., ls -la)"
-                    disabled={isExecuting}
-                />
-                <div className="action-buttons">
-                    <button
-                        type="button"
-                        onClick={executeCommand}
-                        disabled={!commandInput.trim() || isExecuting}
-                        className="btn btn-execute"
-                    >
-                        {isExecuting ? "Executing..." : "Execute"}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={executeStreamingCommand}
-                        disabled={
-                            connectionStatus !== "connected" ||
-                            !commandInput.trim() ||
-                            isExecuting
-                        }
-                        className="btn btn-stream"
-                        title="Execute with real-time streaming output"
-                    >
-                        {isExecuting ? "Streaming..." : "Stream"}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={clearResults}
-                        className="btn"
-                    >
-                        Clear
-                    </button>
-                </div>
-            </div>
-
-            <div className="results-container" ref={resultsEndRef}>
-                {results.length === 0 ? (
-                    <div
-                        style={{
-                            color: "#8b949e",
-                            padding: "2rem",
-                            textAlign: "center",
-                        }}
-                    >
-                        No commands executed yet. Try running a command above.
-                    </div>
-                ) : (
-                    <div>
-                        {results.map((result) => (
-                            <div key={result.id} className="command-result">
-                                <div className="result-header">
-                                    <span className="status-icon">
-                                        {getStatusIcon(result.status)}
-                                    </span>
-                                    <div className="command-line">
-                                        ${" "}
-                                        <span>
-                                            {result.command}{" "}
-                                            {result.args.join(" ")}
-                                        </span>
-                                    </div>
-                                    {result.status !== "running" &&
-                                        result.exitCode !== undefined && (
-                                            <span className="exit-code">
-                                                (exit: {result.exitCode})
-                                            </span>
-                                        )}
-                                    <span className="timestamp">
-                                        {result.timestamp.toLocaleTimeString()}
-                                    </span>
-                                </div>
-
-                                {result.stdout && (
-                                    <div className="stdout-output">
-                                        <pre>{result.stdout}</pre>
-                                    </div>
-                                )}
-
-                                {result.stderr && (
-                                    <div className="stderr-output">
-                                        <pre>{result.stderr}</pre>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                {sessionId && (
+                    <div className="mb-4">
+                        <p className="font-semibold">
+                            Session ID:
+                            <span className="ml-2 text-blue-500">
+                                {sessionId}
+                            </span>
+                        </p>
                     </div>
                 )}
-            </div>
 
-            <div className="help-section">
-                <h3>Example Commands</h3>
-                <div className="help-grid">
-                    <div className="help-item">
-                        <span className="help-command">ls</span> - List files
+                {lastPingTime !== null && (
+                    <div className="mb-4">
+                        <p className="font-semibold">
+                            Last Ping:
+                            <span className="ml-2">{lastPingTime}ms</span>
+                        </p>
                     </div>
-                    <div className="help-item">
-                        <span className="help-command">pwd</span> - Print
-                        working directory
-                    </div>
-                    <div className="help-item">
-                        <span className="help-command">echo</span> - Print text
-                    </div>
-                    <div className="help-item">
-                        <span className="help-command">cat</span> - Display file
-                        contents
-                    </div>
-                    <div className="help-item">
-                        <span className="help-command">whoami</span> - Show
-                        current user
-                    </div>
-                    <div className="help-item">
-                        <span className="help-command">date</span> - Show
-                        current date/time
-                    </div>
-                </div>
-                <div className="help-note">
-                    <strong>Note:</strong> Use the "Stream" button for commands
-                    that produce real-time output (like <code>top</code> or{" "}
-                    <code>tail -f</code>).
+                )}
+
+                <div className="mt-8 text-sm text-gray-500">
+                    <p>
+                        The server is automatically pinged every 5 seconds to
+                        check connection status.
+                    </p>
                 </div>
             </div>
         </div>
     );
 }
 
-const root = createRoot(document.getElementById("root")!);
-root.render(<REPL />);
+// Create root element
+const container = document.getElementById("root");
+if (!container) {
+    throw new Error("Root element not found");
+}
+
+const root = createRoot(container);
+root.render(<App />);

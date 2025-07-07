@@ -7,7 +7,8 @@
     "scripts": {
         "start": "wrangler dev",
         "deploy": "wrangler deploy",
-        "build": "bun build app/index.tsx --outdir public/dist"
+        "build": "bun build app/index.tsx --outdir public/dist",
+        "dev": "bun --watch run app/index.tsx"
     },
     "dependencies": {
         "@cloudflare/sandbox": "^0.0.5",
@@ -17,7 +18,10 @@
     "devDependencies": {
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
+        "autoprefixer": "^10.4.16",
         "bun-types": "latest",
+        "postcss": "^8.4.31",
+        "tailwindcss": "^4.0.0",
         "typescript": "^5.0.0",
         "wrangler": "^4.22.0"
     },
