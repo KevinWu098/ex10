@@ -163,8 +163,6 @@ export function Client({ id, initialMessages }: ClientProps) {
             return;
         }
 
-        console.log("data", data);
-
         if (data.length >= 3) {
             const lastFive = data.slice(-3);
             const allEqual = lastFive.every(
@@ -202,12 +200,16 @@ export function Client({ id, initialMessages }: ClientProps) {
     useEffect(() => {
         if (initialInput && !initialMessages?.length && initialRender.current) {
             handleSubmit();
+            const searchParams = new URLSearchParams(window.location.search);
+            searchParams.delete("initialInput");
+            const newUrl = `${window.location.pathname}${searchParams.toString() ? "?" + searchParams.toString() : ""}`;
+            window.history.replaceState({}, "", newUrl);
             initialRender.current = false;
         }
     }, [initialInput, handleSubmit, initialMessages?.length]);
 
     return (
-        <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">
+        <div className="flex flex-row gap-4 p-2 w-full h-full max-h-full">
             <Chat
                 input={input}
                 messages={messages}
