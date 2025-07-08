@@ -4,10 +4,16 @@ import { memo, useEffect, useState } from "react";
 import { ArtifactCode } from "@/components/artifact/artifact-code";
 import { ArtifactFileNames } from "@/components/artifact/artifact-file-names";
 import { DownloadZip } from "@/components/chat/download-zip";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CodeData } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import {
+    createLocalXpraSession,
+    getServerHealth,
+    getXpraStatus,
+} from "@/lib/xpra-local";
+import { AlertTriangle, Loader2 } from "lucide-react";
 
 export function formatFileContent(
     code: CodeData["content"][],
@@ -43,6 +49,43 @@ export const Artifact = memo(
     }: ArtifactProps) => {
         const code = Object.values(fragment);
         const content = formatFileContent(code, currentFile);
+        const [serverIsLive, setServerIsLive] = useState<boolean | null>(null);
+        const [isStartingServer, setIsStartingServer] = useState(false);
+
+        // Simple check when preview tab is active
+        useEffect(() => {
+            if (currentTab === "preview") {
+                const checkServer = async () => {
+                    try {
+                        const xpraStatus = await getXpraStatus();
+                        setServerIsLive(xpraStatus.running);
+                    } catch (error) {
+                        setServerIsLive(false);
+                    }
+                };
+                checkServer();
+            }
+        }, [currentTab, isLoading, currentPreview, currentPreview]);
+
+        const handleStartServer = async () => {
+            setIsStartingServer(true);
+            try {
+                await createLocalXpraSession();
+                // Wait a moment then recheck server status
+                setTimeout(async () => {
+                    try {
+                        const xpraStatus = await getXpraStatus();
+                        setServerIsLive(xpraStatus.running);
+                    } catch (error) {
+                        setServerIsLive(false);
+                    }
+                }, 2000);
+            } catch (error) {
+                console.error("Failed to start server:", error);
+            } finally {
+                setIsStartingServer(false);
+            }
+        };
 
         if (!code.length) {
             return null;
@@ -51,11 +94,11 @@ export const Artifact = memo(
         return (
             <Tabs
                 defaultValue="code"
-                className="grow gap-0 overflow-hidden"
+                className="overflow-hidden gap-0 grow"
                 value={currentTab}
                 onValueChange={setCurrentTab}
             >
-                <div className="border-input mb-2 flex justify-between rounded-sm border p-2 shadow-xs">
+                <div className="flex justify-between p-2 mb-2 rounded-sm border border-input shadow-xs">
                     <TabsList className="rounded-sm">
                         <TabsTrigger
                             value="code"
@@ -124,18 +167,46 @@ export const Artifact = memo(
                         )}
                         forceMount // NB: forceMount prevents the preview from being unmounted
                     >
-                        {isLoading || !currentPreview ? (
-                            <div className="flex h-full w-full flex-col items-center justify-center gap-2">
-                                <Loader2 className="size-8 animate-spin" />
+                        {code.length > 0 && serverIsLive === true ? (
+                            <iframe
+                                className="w-full h-full border-0"
+                                title="Preview"
+                                src={`${process.env.NEXT_PUBLIC_LOCAL_XPRA_CLIENT_URL}`}
+                            />
+                        ) : code.length > 0 && serverIsLive === false ? (
+                            <div className="flex flex-col gap-4 justify-center items-center w-full h-full">
+                                <AlertTriangle className="text-black size-8" />
+                                <Button
+                                    onClick={handleStartServer}
+                                    disabled={isStartingServer}
+                                >
+                                    {isStartingServer && (
+                                        <Loader2 className="animate-spin size-4" />
+                                    )}
+                                    {isStartingServer
+                                        ? "Starting Server..."
+                                        : "Start Server"}
+                                </Button>
+                            </div>
+                        ) : isLoading || !currentPreview ? (
+                            <div className="flex flex-col gap-2 justify-center items-center w-full h-full">
+                                <Loader2 className="animate-spin size-8" />
                                 <span className="text-lg">
                                     Loading preview...
                                 </span>
                             </div>
+                        ) : code.length > 0 && serverIsLive === null ? (
+                            <div className="flex flex-col gap-2 justify-center items-center w-full h-full">
+                                <Loader2 className="animate-spin size-8" />
+                                <span className="text-lg">
+                                    Checking server status...
+                                </span>
+                            </div>
                         ) : (
                             <iframe
-                                className="h-full w-full border-0"
+                                className="w-full h-full border-0"
                                 title="Preview"
-                                src={`${process.env.NEXT_PUBLIC_XPRA_SERVER_URL}/session/${currentPreview}`}
+                                src={`${process.env.NEXT_PUBLIC_LOCAL_XPRA_CLIENT_URL}`}
                             />
                         )}
                     </TabsContent>

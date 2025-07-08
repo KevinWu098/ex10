@@ -1,5 +1,7 @@
 import express from "express";
 import { spawn, exec } from "child_process";
+import { promises as fs } from "fs";
+import path from "path";
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -27,6 +29,35 @@ function checkXpraRunning() {
     });
 }
 
+// Ensure background.js is available in the extension directory
+async function ensureBackgroundInjected(extensionDir) {
+    try {
+        // Ensure the extension directory exists
+        await fs.mkdir(extensionDir, { recursive: true });
+
+        // Resolve the source path of the hot-reload background script
+        const hotReloadPath = path.join(
+            process.cwd(),
+            "hot-reload",
+            "background.js"
+        );
+        const destPath = path.join(extensionDir, "background.js");
+
+        // Copy/overwrite the file unconditionally (it's idempotent and small)
+        const backgroundJsContent = await fs.readFile(hotReloadPath, "utf8");
+        await fs.writeFile(destPath, backgroundJsContent, "utf8");
+        console.log(
+            "[ensureBackgroundInjected] background.js injected at",
+            destPath
+        );
+    } catch (err) {
+        console.error(
+            "[ensureBackgroundInjected] Failed to inject background.js:",
+            err
+        );
+    }
+}
+
 // Start Xpra
 app.post("/xpra/start", async (req, res) => {
     const isRunning = await checkXpraRunning();
@@ -36,6 +67,10 @@ app.post("/xpra/start", async (req, res) => {
 
     const customPort = req.body.port || xpraPort;
 
+    // NEW: make sure background.js exists before launching xpra
+    const extensionDir = "/tmp/extension";
+    await ensureBackgroundInjected(extensionDir);
+
     try {
         xpraProcess = spawn("xpra", [
             "start",
@@ -43,7 +78,10 @@ app.post("/xpra/start", async (req, res) => {
             "--html=on",
             "--daemon=yes",
             "--exit-with-children=no",
-            "--start-child=chromium --no-sandbox --disable-gpu --disable-software-rasterizer --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-data --load-extension=/tmp/extension --disable-extensions-except=/tmp/extension",
+            "--start-child=chromium --no-sandbox --disable-gpu --disable-software-rasterizer --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-data --load-extension=" +
+                extensionDir +
+                " --disable-extensions-except=" +
+                extensionDir,
         ]);
 
         xpraProcess.stdout.on("data", (data) => {
@@ -79,10 +117,37 @@ app.post("/xpra/stop", async (req, res) => {
     }
 
     try {
-        // Stop all Xpra sessions
-        exec("xpra stop-all", (error, stdout, stderr) => {
+        // Stop all Xpra sessions - get list first, then stop each one
+        exec("xpra list", (error, stdout, stderr) => {
             if (error) {
-                console.error("Error stopping Xpra:", error);
+                console.error("Error listing Xpra sessions:", error);
+            } else {
+                // Parse the output to find active sessions and stop them
+                const lines = stdout.split("\n");
+                lines.forEach((line) => {
+                    if (
+                        line.includes("LIVE session") ||
+                        line.includes("session at :")
+                    ) {
+                        // Extract display number from line like "LIVE session at :100"
+                        const match = line.match(/:(\d+)/);
+                        if (match) {
+                            const display = match[1];
+                            exec(`xpra stop :${display}`, (stopError) => {
+                                if (stopError) {
+                                    console.error(
+                                        `Error stopping Xpra display :${display}:`,
+                                        stopError
+                                    );
+                                } else {
+                                    console.log(
+                                        `Successfully stopped Xpra display :${display}`
+                                    );
+                                }
+                            });
+                        }
+                    }
+                });
             }
         });
 
@@ -112,6 +177,100 @@ app.get("/xpra/status", async (req, res) => {
 // Health check endpoint
 app.get("/health", (req, res) => {
     res.json({ status: "ok" });
+});
+
+// Add updateCode endpoint
+app.post("/updateCode", async (req, res) => {
+    try {
+        const { sessionId, code } = req.body;
+
+        if (!code || !code.file_path || !code.file_content) {
+            return res.status(400).json({
+                error: "Missing required fields: file_path and file_content",
+            });
+        }
+
+        // Ensure the extension directory exists
+        const extensionDir = "/tmp/extension";
+        await fs.mkdir(extensionDir, { recursive: true });
+
+        // Read and inject the hot reload background.js
+        try {
+            const hotReloadPath = path.join(
+                process.cwd(),
+                "hot-reload",
+                "background.js"
+            );
+            const backgroundJsContent = await fs.readFile(
+                hotReloadPath,
+                "utf8"
+            );
+            const backgroundJsPath = path.join(extensionDir, "background.js");
+            await fs.writeFile(backgroundJsPath, backgroundJsContent, "utf8");
+            console.log("Hot reload background.js injected successfully");
+        } catch (error) {
+            console.error("Error injecting hot reload background.js:", error);
+            // Don't fail the whole request if hot reload injection fails
+        }
+
+        // Process the main file content
+        let fileContent = code.file_content;
+
+        // If it's a manifest.json, ensure it includes the background service worker
+        if (code.file_path === "manifest.json") {
+            try {
+                const manifest = JSON.parse(fileContent);
+
+                // Ensure background service worker is included
+                if (!manifest.background) {
+                    manifest.background = {
+                        service_worker: "background.js",
+                    };
+                    console.log(
+                        "Added background service worker to manifest.json"
+                    );
+                } else if (!manifest.background.service_worker) {
+                    manifest.background.service_worker = "background.js";
+                    console.log(
+                        "Updated background service worker in manifest.json"
+                    );
+                }
+
+                fileContent = JSON.stringify(manifest, null, 2);
+            } catch (error) {
+                console.error("Error parsing manifest.json:", error);
+                // Continue with original content if parsing fails
+            }
+        }
+
+        // Normalize the file path to prevent directory traversal
+        const normalizedPath = path
+            .normalize(code.file_path)
+            .replace(/^(\.\.[\/\\])+/, "");
+        const filePath = path.join(extensionDir, normalizedPath);
+
+        // Ensure the directory for the file exists
+        const fileDir = path.dirname(filePath);
+        await fs.mkdir(fileDir, { recursive: true });
+
+        // Write the file content
+        await fs.writeFile(filePath, fileContent, "utf8");
+
+        console.log(`File written successfully: ${filePath}`);
+        console.log(`File size: ${fileContent.length} characters`);
+
+        res.json({
+            success: true,
+            message: `File ${code.file_path} updated successfully with hot reload support`,
+            filePath: filePath,
+        });
+    } catch (error) {
+        console.error("Error updating code:", error);
+        res.status(500).json({
+            error: "Failed to update code",
+            details: error.message,
+        });
+    }
 });
 
 app.listen(port, () => {

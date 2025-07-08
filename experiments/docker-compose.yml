@@ -1,0 +1,34 @@
+# To run:
+# docker-compose up --build
+#
+# To run in detached mode:
+# docker-compose up --build -d
+#
+# To stop:
+# docker-compose down
+#
+# To rebuild and run:
+# docker-compose down && docker-compose up --build
+
+services:
+    chromium-xpra:
+        build:
+            context: .
+            dockerfile: Dockerfile.chromium-xpra
+        container_name: chromium-xpra
+        ports:
+            - "10000:10000" # Xpra HTML client
+            - "3001:3001" # Server port
+            - "8000:8000" # Additional server port
+        volumes:
+            - ./extension:/tmp/extension
+        restart: unless-stopped
+        environment:
+            - DISPLAY=:100
+        # Optional: Add resource limits
+        # deploy:
+        #   resources:
+        #     limits:
+        #       memory: 2G
+        #     reservations:
+        #       memory: 1G

@@ -1,7 +1,7 @@
 # To build and run:
 # docker build -t chromium-xpra -f Dockerfile.chromium-xpra .
 # docker rm -f chromium-xpra
-# docker run -p 10000:10000 -p 3001:3001 -p 8000:8000 --name chromium-xpra chromium-xpra
+# docker run -p 10000:10000 -p 3001:3001 -p 8000:8000 -v $(pwd)/extension:/tmp/extension --name chromium-xpra chromium-xpra
 
 FROM debian:bullseye-slim
 
@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Prepare environment
-RUN dbus-uuidgen > /etc/machine-id && mkdir -p /run/user/0
+RUN dbus-uuidgen > /etc/machine-id && mkdir -p /run/user/0 /tmp/extension
 
 # Working dir
 WORKDIR /app
@@ -39,7 +39,6 @@ RUN npm install
 COPY start.sh /start.sh
 COPY reload-watcher.mjs /app/reload-watcher.mjs
 COPY server.js /app/server.js
-COPY extension /tmp/extension
 
 # Permissions
 RUN chmod +x /start.sh

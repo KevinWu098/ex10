@@ -6,6 +6,10 @@ import { Chat } from "@/components/chat/chat";
 import { CodeData, CodeDataSchema } from "@/lib/data";
 import { generateUUID } from "@/lib/utils";
 import { createXpraSession, updateXpraSession } from "@/lib/xpra";
+import {
+    createLocalXpraSession,
+    updateXpraSession as updateLocalXpraSession,
+} from "@/lib/xpra-local";
 import { useChat } from "@ai-sdk/react";
 import { Message, ToolInvocation, UIMessage } from "ai";
 import { useQueryState } from "nuqs";
@@ -95,13 +99,10 @@ export function Client({ id, initialMessages }: ClientProps) {
                     toast.info(
                         "Environment not yet initialized... connection currently in progress"
                     );
-                    setCurrentTab("preview");
-
                     try {
-                        const { sessionId: newSessionId } =
-                            await createXpraSession();
-                        session = newSessionId;
-                        setSessionId(newSessionId);
+                        await createLocalXpraSession();
+                        session = "foo";
+                        setSessionId("foo");
                     } catch (error) {
                         console.error("Failed to create Xpra session:", error);
                         toast.error("Xpra session not created");
@@ -115,23 +116,22 @@ export function Client({ id, initialMessages }: ClientProps) {
                 }
 
                 setCurrentTab("preview");
-                // await Promise.all(
-                //     code.map((c) => {
-                //         const cleanedContent = formatFileContent(
-                //             code,
-                //             c.file_name
-                //         );
 
-                //         console.log("cleaned content", cleanedContent);
+                console.log("SENDING");
+                // Send all files to the server
+                const codeFiles = Object.values(fragment);
+                await Promise.all(
+                    codeFiles.map((codeFile) => {
+                        if (!codeFile) return Promise.resolve();
 
-                //         return updateXpraSession(session as string, {
-                //             ...c,
-                //             file_content: cleanedContent ?? "",
-                //         });
-                //     })
-                // );
+                        console.log("Sending file:", codeFile.file_path);
 
-                setIsPreviewLoading(false);
+                        return updateLocalXpraSession(
+                            session as string,
+                            codeFile
+                        );
+                    })
+                );
             } catch (error) {
                 console.error(
                     "Failed to communicate with Xpra session:",
@@ -141,7 +141,7 @@ export function Client({ id, initialMessages }: ClientProps) {
             }
 
             setCurrentTab("preview");
-            // setIsPreviewLoading(false);
+            setIsPreviewLoading(false);
         },
     });
 
