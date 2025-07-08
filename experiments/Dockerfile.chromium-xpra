@@ -1,7 +1,7 @@
 # To build and run:
 # docker build -t chromium-xpra -f Dockerfile.chromium-xpra .
 # docker rm -f chromium-xpra
-# docker run -p 10000:10000 chromium-xpra
+# docker run -p 10000:10000 -p 3001:3001 -p 8000:8000 --name chromium-xpra chromium-xpra
 
 FROM debian:bullseye-slim
 
@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     python3-xdg \
     dbus-x11 \
     x11-utils \
+    xauth \
     nodejs npm \
     --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -29,18 +30,22 @@ RUN dbus-uuidgen > /etc/machine-id && mkdir -p /run/user/0
 
 # Working dir
 WORKDIR /app
-RUN npm init -y && npm install chrome-remote-interface
+
+# Copy server files and install dependencies
+COPY package.json /app/package.json
+RUN npm install
 
 # Add files
 COPY start.sh /start.sh
 COPY reload-watcher.mjs /app/reload-watcher.mjs
+COPY server.js /app/server.js
 COPY extension /tmp/extension
 
 # Permissions
 RUN chmod +x /start.sh
 
-# Port for xpra HTML client
-EXPOSE 10000
+# Port for xpra HTML client and server
+EXPOSE 10000 3001 8000
 
 # Entrypoint
 CMD ["/start.sh"]

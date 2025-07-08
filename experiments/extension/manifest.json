@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Hot HELLO!!! Test",
+    "name": "Extensfasdfsion Test",
     "version": "1.0",
     "permissions": ["storage"],
     "background": {

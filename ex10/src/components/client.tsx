@@ -83,11 +83,8 @@ export function Client({ id, initialMessages }: ClientProps) {
             toast.error("An error occurred: " + error?.message);
         },
         onFinish: async (message) => {
-            console.log("onFinish", message);
-
             setFragment(extractCodeFromMessage(message));
 
-            return;
             let session = sessionId;
             try {
                 if (!fragment) {
@@ -96,7 +93,7 @@ export function Client({ id, initialMessages }: ClientProps) {
 
                 if (!session) {
                     toast.info(
-                        "Xpra server not yet initialized... connection currently in progress"
+                        "Environment not yet initialized... connection currently in progress"
                     );
                     setCurrentTab("preview");
 

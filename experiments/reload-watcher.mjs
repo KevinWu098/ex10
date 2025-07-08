@@ -1,23 +1,97 @@
 import fs from "fs";
-import WebSocket from "ws";
+import WebSocket, { WebSocketServer } from "ws";
+import chalk from "chalk";
 
 const EXTENSION_DIR = "/tmp/extension";
 const WEBSOCKET_PORT = 8000;
 
-const wss = new WebSocket.Server({ port: WEBSOCKET_PORT });
-console.log(
-    `🧠 Hot Reload WebSocket server running on ws://localhost:${WEBSOCKET_PORT}`
+const formatTime = () => {
+    const date = new Date();
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    return chalk.gray(`[${hours}:${minutes}:${seconds}]`);
+};
+
+const log = (emoji, color, message) => {
+    console.log(`${formatTime()} ${chalk[color](emoji)} ${message}`);
+};
+
+const wss = new WebSocketServer({ port: WEBSOCKET_PORT });
+log(
+    "🧠",
+    "cyan",
+    chalk.cyan.bold("Hot Reload WebSocket server running on ") +
+        chalk.yellow.underline(`ws://localhost:${WEBSOCKET_PORT}`)
 );
 
 wss.on("connection", (ws) => {
-    console.log("🧩 Extension connected to hot reload server");
+    const clientId = Math.random().toString(36).substr(2, 9);
+    log(
+        "🧩",
+        "green",
+        `Extension connected ${chalk.blue(`(ID: ${clientId})`)}`
+    );
 
     ws.on("message", (msg) => {
-        console.log("🔁 From extension:", msg.toString());
+        try {
+            const parsed = JSON.parse(msg.toString());
+            if (parsed.type === "heartbeat") {
+                log("💓", "magenta", `Heartbeat from ${chalk.blue(clientId)}`);
+            } else {
+                log(
+                    "🔁",
+                    "cyan",
+                    `Message from ${chalk.blue(clientId)}: ${chalk.white(
+                        msg.toString()
+                    )}`
+                );
+            }
+        } catch (e) {
+            log(
+                "🔁",
+                "cyan",
+                `Message from ${chalk.blue(clientId)}: ${chalk.white(
+                    msg.toString()
+                )}`
+            );
+        }
     });
 
-    ws.on("close", () => {
-        console.log("❌ Extension disconnected");
+    ws.on("close", (code, reason) => {
+        log(
+            "❌",
+            "red",
+            `Extension disconnected ${chalk.blue(
+                `(${clientId})`
+            )} - ${chalk.yellow(`Code: ${code}`)}${
+                reason ? `, ${chalk.yellow(`Reason: ${reason}`)}` : ""
+            }`
+        );
+    });
+
+    ws.on("error", (error) => {
+        log(
+            "⚠️",
+            "red",
+            `WebSocket error ${chalk.blue(`(${clientId})`)}: ${chalk.red(
+                error.message
+            )}`
+        );
+    });
+
+    // Send ping every 30 seconds to keep connection alive
+    const pingInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.ping();
+            log("🏓", "green", `Ping sent to ${chalk.blue(clientId)}`);
+        } else {
+            clearInterval(pingInterval);
+        }
+    }, 30000);
+
+    ws.on("pong", () => {
+        log("🏓", "green", `Pong received from ${chalk.blue(clientId)}`);
     });
 });
 
@@ -30,12 +104,22 @@ function notifyClients(changedFile) {
         }
     }
 
-    console.log(`📦 Change sent to extension: ${changedFile}`);
+    log(
+        "📦",
+        "yellow",
+        `Change notification sent: ${chalk.green(changedFile)}`
+    );
 }
 
 fs.watch(EXTENSION_DIR, { recursive: true }, (eventType, filename) => {
     if (filename) {
-        console.log(`📁 Detected ${eventType} on ${filename}`);
+        log(
+            "📁",
+            "blue",
+            `File change detected: ${chalk.yellow(eventType)} on ${chalk.green(
+                filename
+            )}`
+        );
         notifyClients(filename);
     }
 });
