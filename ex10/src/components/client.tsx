@@ -8,6 +8,7 @@ import { generateUUID } from "@/lib/utils";
 import { createXpraSession, updateXpraSession } from "@/lib/xpra";
 import {
     createLocalXpraSession,
+    getXpraStatus,
     updateXpraSession as updateLocalXpraSession,
 } from "@/lib/xpra-local";
 import { useChat } from "@ai-sdk/react";
@@ -87,11 +88,12 @@ export function Client({ id, initialMessages }: ClientProps) {
             toast.error("An error occurred: " + error?.message);
         },
         onFinish: async (message) => {
-            setFragment(extractCodeFromMessage(message));
+            const code = extractCodeFromMessage(message);
+            setFragment(code);
 
             let session = sessionId;
             try {
-                if (!fragment) {
+                if (!code) {
                     return;
                 }
 
@@ -106,25 +108,31 @@ export function Client({ id, initialMessages }: ClientProps) {
                     } catch (error) {
                         console.error("Failed to create Xpra session:", error);
                         toast.error("Xpra session not created");
-                        throw error; // propagate upwards
+                        // throw error; // propagate upwards
                     }
                 }
 
-                if (!session) {
-                    toast.error("No session ID found");
-                    throw new Error("No session ID found");
+                try {
+                    const res = await getXpraStatus();
+
+                    if (!session && !res.running) {
+                        toast.error("No session ID found");
+                        throw new Error("No session ID found");
+                    }
+                } catch (error) {
+                    console.error("Failed to get Xpra status:", error);
+                    toast.error("Failed to get Xpra status");
+                    throw error;
                 }
 
                 setCurrentTab("preview");
 
-                console.log("SENDING");
+                console.log("code", code);
                 // Send all files to the server
-                const codeFiles = Object.values(fragment);
+                const codeFiles = Object.values(code);
                 await Promise.all(
                     codeFiles.map((codeFile) => {
                         if (!codeFile) return Promise.resolve();
-
-                        console.log("Sending file:", codeFile.file_path);
 
                         return updateLocalXpraSession(
                             session as string,
@@ -206,7 +214,7 @@ export function Client({ id, initialMessages }: ClientProps) {
     }, [initialInput, handleSubmit, initialMessages?.length]);
 
     return (
-        <div className="flex flex-row gap-4 p-2 w-full h-full max-h-full">
+        <div className="flex h-full max-h-full w-full flex-row gap-4 p-2">
             <Chat
                 input={input}
                 messages={messages}

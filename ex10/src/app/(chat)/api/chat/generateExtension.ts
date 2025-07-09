@@ -33,8 +33,6 @@ export const generateExtension = ({
             for await (const delta of fullStream) {
                 const { type } = delta;
 
-                console.log("delta", delta);
-
                 if (type === "object") {
                     const { object } = delta;
                     const { code } = object;

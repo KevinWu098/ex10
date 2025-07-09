@@ -115,7 +115,6 @@ export async function updateXpraSession(
     code: FragmentSchema["code"]
 ) {
     try {
-        console.log("sending");
         const response = await fetch(`${XPRA_SERVER_URL}/updateCode`, {
             method: "POST",
             headers: {
@@ -133,7 +132,6 @@ export async function updateXpraSession(
 
         const result = await response.json();
 
-        console.log("SEND SUCCESS");
         return result;
     } catch (error) {
         console.error("Error updating code in session:", error);

@@ -2,6 +2,18 @@ import express from "express";
 import { spawn, exec } from "child_process";
 import { promises as fs } from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+
+// Curl commands for testing:
+// curl -X POST http://localhost:3001/xpra/start
+// curl -X POST http://localhost:3001/xpra/stop
+// curl -X GET http://localhost:3001/xpra/status
+
+
+// Node ESM modules don’t have __dirname by default; define it here so we can
+// reliably resolve local resources regardless of the working directory.
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -35,9 +47,10 @@ async function ensureBackgroundInjected(extensionDir) {
         // Ensure the extension directory exists
         await fs.mkdir(extensionDir, { recursive: true });
 
-        // Resolve the source path of the hot-reload background script
+        // Use __dirname to reliably resolve the hot-reload script location inside the
+        // container no matter where the server is started from.
         const hotReloadPath = path.join(
-            process.cwd(),
+            __dirname,
             "hot-reload",
             "background.js"
         );
@@ -50,6 +63,44 @@ async function ensureBackgroundInjected(extensionDir) {
             "[ensureBackgroundInjected] background.js injected at",
             destPath
         );
+
+        // Ensure manifest.json references background.js so the service worker is
+        // actually loaded when the browser first starts with the extension.
+        try {
+            const manifestPath = path.join(extensionDir, "manifest.json");
+            const manifestRaw = await fs.readFile(manifestPath, "utf8");
+            const manifest = JSON.parse(manifestRaw);
+
+            let manifestChanged = false;
+
+            if (!manifest.background) {
+                manifest.background = { service_worker: "background.js" };
+                manifestChanged = true;
+            } else if (
+                manifest.background &&
+                manifest.background.service_worker !== "background.js"
+            ) {
+                manifest.background.service_worker = "background.js";
+                manifestChanged = true;
+            }
+
+            if (manifestChanged) {
+                await fs.writeFile(
+                    manifestPath,
+                    JSON.stringify(manifest, null, 2),
+                    "utf8"
+                );
+                console.log(
+                    "[ensureBackgroundInjected] manifest.json updated with background.js"
+                );
+            }
+        } catch (manifestErr) {
+            // It's possible the manifest doesn't exist yet; log and continue.
+            console.warn(
+                "[ensureBackgroundInjected] Could not update manifest.json:",
+                manifestErr.message
+            );
+        }
     } catch (err) {
         console.error(
             "[ensureBackgroundInjected] Failed to inject background.js:",
@@ -197,7 +248,7 @@ app.post("/updateCode", async (req, res) => {
         // Read and inject the hot reload background.js
         try {
             const hotReloadPath = path.join(
-                process.cwd(),
+                __dirname,
                 "hot-reload",
                 "background.js"
             );
