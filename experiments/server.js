@@ -141,11 +141,15 @@ async function ensureBackgroundInjected(extensionDir) {
 
             // Ensure the extension can connect to the local hot-reload WebSocket
             // and use chrome.scripting to re-inject updated content scripts.
-            // 1. Add the "scripting" permission if it is missing.
+            // 1. Ensure required permissions for hot reload
             if (!manifest.permissions) manifest.permissions = [];
-            if (!manifest.permissions.includes("scripting")) {
-                manifest.permissions.push("scripting");
-                manifestChanged = true;
+
+            const requiredPerms = ["scripting", "tabs"];
+            for (const perm of requiredPerms) {
+                if (!manifest.permissions.includes(perm)) {
+                    manifest.permissions.push(perm);
+                    manifestChanged = true;
+                }
             }
 
             // 2. Add the host permission for localhost:8000 (WebSocket server).
