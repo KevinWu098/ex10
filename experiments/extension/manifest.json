@@ -1,9 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "fasdfs Background Extension",
+  "name": "Red Background Extension",
   "version": "1.0",
+  "description": "Changes the page background to red.",
   "permissions": [
-    "activeTab"
+    "activeTab",
+    "scripting"
   ],
   "content_scripts": [
     {
@@ -17,5 +19,8 @@
   ],
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "host_permissions": [
+    "http://localhost:8000/"
+  ]
 }

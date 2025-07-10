@@ -97,23 +97,26 @@ export function Client({ id, initialMessages }: ClientProps) {
                     return;
                 }
 
-                if (!session) {
-                    toast.info(
-                        "Environment not yet initialized... connection currently in progress"
-                    );
-                    try {
-                        await createLocalXpraSession();
-                        session = "foo";
-                        setSessionId("foo");
-                    } catch (error) {
-                        console.error("Failed to create Xpra session:", error);
-                        toast.error("Xpra session not created");
-                        // throw error; // propagate upwards
-                    }
-                }
-
                 try {
                     const res = await getXpraStatus();
+
+                    if (!session && !res.running) {
+                        toast.info(
+                            "Environment not yet initialized... connection currently in progress"
+                        );
+                        try {
+                            await createLocalXpraSession();
+                            session = "foo";
+                            setSessionId("foo");
+                        } catch (error) {
+                            console.error(
+                                "Failed to create Xpra session:",
+                                error
+                            );
+                            toast.error("Xpra session not created");
+                            // throw error; // propagate upwards
+                        }
+                    }
 
                     if (!session && !res.running) {
                         toast.error("No session ID found");

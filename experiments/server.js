@@ -1,5 +1,6 @@
 import express from "express";
 import { spawn, exec } from "child_process";
+import net from "net";
 import { promises as fs } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -18,6 +19,60 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3001;
 const xpraPort = process.env.XPRA_PORT || 10000;
+
+// --- Start hot-reload watcher automatically in development/local runs ---
+async function maybeStartHotReloadWatcher() {
+    const port = 8000;
+
+    const isPortTaken = await new Promise((resolve) => {
+        const tester = net
+            .createServer()
+            .once("error", (err) => {
+                if (err.code === "EADDRINUSE") {
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            })
+            .once("listening", () => {
+                tester.close();
+                resolve(false);
+            })
+            .listen(port, "0.0.0.0");
+    });
+
+    if (isPortTaken) {
+        console.log(
+            `[HotReload] Port ${port} already in use – assuming watcher is running`
+        );
+        return; // do not spawn another watcher
+    }
+
+    try {
+        const watcherPath = path.join(__dirname, "reload-watcher.mjs");
+        const hotReloadWatcher = spawn("node", [watcherPath], {
+            stdio: "inherit",
+            env: {
+                ...process.env,
+                EXTENSION_DIR: path.join(__dirname, "extension"),
+            }, // ensure watcher monitors local extension dir
+        });
+
+        process.on("exit", () => {
+            if (hotReloadWatcher) {
+                hotReloadWatcher.kill();
+            }
+        });
+        console.log("[HotReload] Watcher started via server.js");
+    } catch (err) {
+        console.warn(
+            "[HotReload] Failed to start reload-watcher:",
+            err.message
+        );
+    }
+}
+
+maybeStartHotReloadWatcher();
 
 app.use(express.json());
 
@@ -81,6 +136,24 @@ async function ensureBackgroundInjected(extensionDir) {
                 manifest.background.service_worker !== "background.js"
             ) {
                 manifest.background.service_worker = "background.js";
+                manifestChanged = true;
+            }
+
+            // Ensure the extension can connect to the local hot-reload WebSocket
+            // and use chrome.scripting to re-inject updated content scripts.
+            // 1. Add the "scripting" permission if it is missing.
+            if (!manifest.permissions) manifest.permissions = [];
+            if (!manifest.permissions.includes("scripting")) {
+                manifest.permissions.push("scripting");
+                manifestChanged = true;
+            }
+
+            // 2. Add the host permission for localhost:8000 (WebSocket server).
+            //    The "ws://" scheme is covered by the corresponding http/https host permission.
+            if (!manifest.host_permissions) manifest.host_permissions = [];
+            const localHostPerm = "http://localhost:8000/";
+            if (!manifest.host_permissions.includes(localHostPerm)) {
+                manifest.host_permissions.push(localHostPerm);
                 manifestChanged = true;
             }
 
@@ -284,6 +357,22 @@ app.post("/updateCode", async (req, res) => {
                     manifest.background.service_worker = "background.js";
                     console.log(
                         "Updated background service worker in manifest.json"
+                    );
+                }
+
+                // Ensure the extension has the permissions it needs for hot reload.
+                if (!manifest.permissions) manifest.permissions = [];
+                if (!manifest.permissions.includes("scripting")) {
+                    manifest.permissions.push("scripting");
+                    console.log("Added 'scripting' permission to manifest.json");
+                }
+
+                if (!manifest.host_permissions) manifest.host_permissions = [];
+                const localHostPerm = "http://localhost:8000/";
+                if (!manifest.host_permissions.includes(localHostPerm)) {
+                    manifest.host_permissions.push(localHostPerm);
+                    console.log(
+                        "Added localhost host_permission to manifest.json"
                     );
                 }
 

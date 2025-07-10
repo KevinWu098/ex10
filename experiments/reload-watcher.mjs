@@ -1,8 +1,8 @@
-import fs from "fs";
+import chokidar from "chokidar";
 import WebSocket, { WebSocketServer } from "ws";
 import chalk from "chalk";
 
-const EXTENSION_DIR = "/tmp/extension";
+const EXTENSION_DIR = process.env.EXTENSION_DIR || "/tmp/extension";
 const WEBSOCKET_PORT = 8000;
 
 const formatTime = () => {
@@ -111,15 +111,17 @@ function notifyClients(changedFile) {
     );
 }
 
-fs.watch(EXTENSION_DIR, { recursive: true }, (eventType, filename) => {
-    if (filename) {
-        log(
-            "📁",
-            "blue",
-            `File change detected: ${chalk.yellow(eventType)} on ${chalk.green(
-                filename
-            )}`
-        );
-        notifyClients(filename);
-    }
+// Use chokidar for robust, cross-platform file watching (recursive on Linux).
+const watcher = chokidar.watch(EXTENSION_DIR, {
+    persistent: true,
+    ignoreInitial: true, // ignore events for existing files on startup
+});
+
+watcher.on("all", (event, changedPath) => {
+    log(
+        "📁",
+        "blue",
+        `File ${event} detected: ${chalk.green(changedPath)}`
+    );
+    notifyClients(changedPath);
 });

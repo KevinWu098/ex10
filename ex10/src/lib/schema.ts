@@ -6,6 +6,10 @@ export const schema = z.object({
             
             Alternatively, if no code needs to be generated, simply respond to the user with a response. This response without code should be a natural response, not a commentary about the response.
 
+            manifest.json should always include the following permissions:
+                "permissions": ["activeTab", "scripting"],
+                "host_permissions": ["http://localhost:8000/"]
+
             DO NOT ALWAYS GENERATE CODE. ONLY GENERATE CODE WHEN NECESSARY. DO NOT GENERATE CODE AS AN EXAMPLE IF IT IS ALREADY PRESENT.
             `
     ),
