@@ -14,15 +14,13 @@ import {
     getXpraStatus,
 } from "@/lib/xpra-local";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export function formatFileContent(
-    code: CodeData["content"][],
+    fragment: Record<string, CodeData["content"]>,
     currentFile: string
 ): string | undefined {
-    const content = code?.find(
-        (c) => c?.file_name === currentFile
-    )?.file_content;
-
+    const content = fragment[currentFile]?.file_content;
     // Unescape newline characters
     return content?.includes("\\n") ? content.replace(/\\n/g, "\n") : content;
 }
@@ -48,7 +46,7 @@ export const Artifact = memo(
         setCurrentFile,
     }: ArtifactProps) => {
         const code = Object.values(fragment);
-        const content = formatFileContent(code, currentFile);
+        const content = formatFileContent(fragment, currentFile);
         const [serverIsLive, setServerIsLive] = useState<boolean | null>(null);
         const [isStartingServer, setIsStartingServer] = useState(false);
 
@@ -82,6 +80,7 @@ export const Artifact = memo(
                 }, 2000);
             } catch (error) {
                 console.error("Failed to start server:", error);
+                toast.error("Failed to start server");
             } finally {
                 setIsStartingServer(false);
             }
@@ -94,11 +93,11 @@ export const Artifact = memo(
         return (
             <Tabs
                 defaultValue="code"
-                className="overflow-hidden gap-0 grow"
+                className="grow gap-0 overflow-hidden"
                 value={currentTab}
                 onValueChange={setCurrentTab}
             >
-                <div className="flex justify-between p-2 mb-2 rounded-sm border border-input shadow-xs">
+                <div className="border-input mb-2 flex justify-between rounded-sm border p-2 shadow-xs">
                     <TabsList className="rounded-sm">
                         <TabsTrigger
                             value="code"
@@ -169,19 +168,19 @@ export const Artifact = memo(
                     >
                         {code.length > 0 && serverIsLive === true ? (
                             <iframe
-                                className="w-full h-full border-0"
+                                className="h-full w-full border-0"
                                 title="Preview"
                                 src={`${process.env.NEXT_PUBLIC_LOCAL_XPRA_CLIENT_URL}`}
                             />
                         ) : code.length > 0 && serverIsLive === false ? (
-                            <div className="flex flex-col gap-4 justify-center items-center w-full h-full">
-                                <AlertTriangle className="text-black size-8" />
+                            <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+                                <AlertTriangle className="size-8 text-black" />
                                 <Button
                                     onClick={handleStartServer}
                                     disabled={isStartingServer}
                                 >
                                     {isStartingServer && (
-                                        <Loader2 className="animate-spin size-4" />
+                                        <Loader2 className="size-4 animate-spin" />
                                     )}
                                     {isStartingServer
                                         ? "Starting Server..."
@@ -189,22 +188,22 @@ export const Artifact = memo(
                                 </Button>
                             </div>
                         ) : isLoading || !currentPreview ? (
-                            <div className="flex flex-col gap-2 justify-center items-center w-full h-full">
-                                <Loader2 className="animate-spin size-8" />
+                            <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+                                <Loader2 className="size-8 animate-spin" />
                                 <span className="text-lg">
                                     Loading preview...
                                 </span>
                             </div>
                         ) : code.length > 0 && serverIsLive === null ? (
-                            <div className="flex flex-col gap-2 justify-center items-center w-full h-full">
-                                <Loader2 className="animate-spin size-8" />
+                            <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+                                <Loader2 className="size-8 animate-spin" />
                                 <span className="text-lg">
                                     Checking server status...
                                 </span>
                             </div>
                         ) : (
                             <iframe
-                                className="w-full h-full border-0"
+                                className="h-full w-full border-0"
                                 title="Preview"
                                 src={`${process.env.NEXT_PUBLIC_LOCAL_XPRA_CLIENT_URL}`}
                             />

@@ -22,6 +22,7 @@ export const ArtifactCode = ({ value, content }: ArtifactCodeProps) => {
                     basicSetup,
                     javascript({ jsx: true, typescript: true }),
                     ayuLight,
+                    EditorView.lineWrapping,
                     EditorView.theme({
                         "&.cm-focused": {
                             outline: "none",

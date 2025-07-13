@@ -110,7 +110,7 @@ export async function getServerHealth() {
     }
 }
 
-export async function updateXpraSession(
+export async function updateLocalXpraSession(
     sessionId: string,
     code: FragmentSchema["code"]
 ) {

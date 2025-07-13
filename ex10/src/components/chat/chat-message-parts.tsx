@@ -69,7 +69,7 @@ export function ChatMessageParts({
                         className="group min-h-scroll-anchor flex w-full max-w-3xl flex-col items-start gap-2 px-6 pb-2"
                         key={key}
                     >
-                        <LoaderIcon />
+                        <LoaderIcon className="animate-spin" />
                     </div>
                 );
             }

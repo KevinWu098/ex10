@@ -3,57 +3,23 @@
 import { useEffect, useRef, useState } from "react";
 import { Artifact } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
+import { extractCodeFromMessage } from "@/lib/client";
 import { CodeData, CodeDataSchema } from "@/lib/data";
 import { generateUUID } from "@/lib/utils";
-import { createXpraSession, updateXpraSession } from "@/lib/xpra";
 import {
     createLocalXpraSession,
     getXpraStatus,
-    updateXpraSession as updateLocalXpraSession,
+    updateLocalXpraSession,
 } from "@/lib/xpra-local";
 import { useChat } from "@ai-sdk/react";
-import { Message, ToolInvocation, UIMessage } from "ai";
+import { UIMessage } from "ai";
 import { useQueryState } from "nuqs";
 import { toast } from "sonner";
-
-type ToolInvocationUIPart = Extract<
-    NonNullable<Message["parts"]>[number],
-    {
-        type: "tool-invocation";
-    }
->;
 
 interface ClientProps {
     id: string;
     initialMessages?: Array<UIMessage>;
 }
-
-const extractCodeFromMessage = (
-    message?: Message
-): Record<string, CodeData["content"]> => {
-    const codeParts = (message?.parts?.filter(
-        (part) =>
-            part.type === "tool-invocation" &&
-            part.toolInvocation &&
-            part.toolInvocation.state === "result"
-    ) ?? []) as ToolInvocationUIPart[];
-
-    return codeParts.reduce(
-        (acc, part) => {
-            const code = (
-                part.toolInvocation as Extract<
-                    ToolInvocation,
-                    { state: "result" }
-                >
-            ).result;
-            if (code) {
-                acc[code.file_path] = code;
-            }
-            return acc;
-        },
-        {} as Record<string, CodeData["content"]>
-    );
-};
 
 export function Client({ id, initialMessages }: ClientProps) {
     const [initialInput] = useQueryState("initialInput", { defaultValue: "" });
@@ -128,10 +94,6 @@ export function Client({ id, initialMessages }: ClientProps) {
                     throw error;
                 }
 
-                setCurrentTab("preview");
-
-                console.log("code", code);
-                // Send all files to the server
                 const codeFiles = Object.values(code);
                 await Promise.all(
                     codeFiles.map((codeFile) => {
@@ -151,7 +113,6 @@ export function Client({ id, initialMessages }: ClientProps) {
                 toast.error("Failed to communicate with Xpra session");
             }
 
-            setCurrentTab("preview");
             setIsPreviewLoading(false);
         },
     });
@@ -169,19 +130,6 @@ export function Client({ id, initialMessages }: ClientProps) {
     useEffect(() => {
         if (!data) {
             return;
-        }
-
-        if (data.length >= 3) {
-            const lastFive = data.slice(-3);
-            const allEqual = lastFive.every(
-                (item, i, arr) =>
-                    i === 0 || JSON.stringify(item) === JSON.stringify(arr[0])
-            );
-
-            if (allEqual) {
-                stop();
-                return;
-            }
         }
 
         const result = CodeDataSchema.safeParse(data.at(-1));
