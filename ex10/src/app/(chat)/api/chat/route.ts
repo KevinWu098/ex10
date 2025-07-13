@@ -1,6 +1,7 @@
 import { generateExtension } from "@/app/(chat)/api/chat/generateExtension";
 import { getPageContext } from "@/app/(chat)/api/chat/getPageContext";
 import { generateTitleFromUserMessage } from "@/lib/actions";
+import type { CodeData } from "@/lib/data";
 import { getModel } from "@/lib/models";
 import { getChatById, saveChat, saveMessages } from "@/lib/queries";
 import { SYSTEM_PROMPT } from "@/lib/system";
@@ -18,9 +19,11 @@ export async function POST(request: Request) {
         const {
             id,
             messages,
+            fragment,
         }: {
             id: string;
             messages: Array<UIMessage>;
+            fragment: Record<string, CodeData["content"]>;
         } = await request.json();
 
         const userMessage = getMostRecentUserMessage(messages);
@@ -58,9 +61,19 @@ export async function POST(request: Request) {
 
         return createDataStreamResponse({
             execute: (dataStream) => {
+                const fragmentContext =
+                    Object.keys(fragment).length > 0
+                        ? `\n\nCurrent code files:\n${Object.entries(fragment)
+                              .map(
+                                  ([filePath, content]) =>
+                                      `\n--- ${filePath} ---\n${content.file_content || ""}`
+                              )
+                              .join("\n")}`
+                        : "";
+
                 const result = streamText({
                     model: getModel(),
-                    system: SYSTEM_PROMPT,
+                    system: SYSTEM_PROMPT + fragmentContext,
                     messages,
                     maxSteps: 5,
                     experimental_activeTools: [

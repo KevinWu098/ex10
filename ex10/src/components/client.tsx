@@ -31,6 +31,8 @@ export function Client({ id, initialMessages }: ClientProps) {
     const [currentFile, setCurrentFile] = useState<string>(
         Object.keys(initialCode).at(0) ?? ""
     );
+    const [fragment, setFragment] =
+        useState<Record<string, CodeData["content"]>>(initialCode);
 
     const {
         messages,
@@ -38,15 +40,15 @@ export function Client({ id, initialMessages }: ClientProps) {
         handleSubmit,
         input,
         setInput,
-        append,
+        append: _append,
         status,
         stop,
         reload,
-        error,
+        error: _error,
         data,
     } = useChat({
         id,
-        body: { id },
+        body: { id, fragment },
         initialInput: !initialMessages?.length ? initialInput : "",
         initialMessages,
         experimental_throttle: 100,
@@ -118,9 +120,6 @@ export function Client({ id, initialMessages }: ClientProps) {
             setIsPreviewLoading(false);
         },
     });
-
-    const [fragment, setFragment] =
-        useState<Record<string, CodeData["content"]>>(initialCode);
 
     useEffect(() => {
         if (!data) {
