@@ -26,7 +26,11 @@ export function Client({ id, initialMessages }: ClientProps) {
     const [isPreviewLoading, setIsPreviewLoading] = useState(true);
     const [sessionId, setSessionId] = useState<string>();
     const [currentTab, setCurrentTab] = useState("code");
-    const [currentFile, setCurrentFile] = useState<string>("");
+
+    const initialCode = extractCodeFromMessage(initialMessages?.at(-1));
+    const [currentFile, setCurrentFile] = useState<string>(
+        Object.keys(initialCode).at(0) ?? ""
+    );
 
     const {
         messages,
@@ -55,7 +59,6 @@ export function Client({ id, initialMessages }: ClientProps) {
         },
         onFinish: async (message) => {
             const code = extractCodeFromMessage(message);
-            setFragment(code);
 
             let session = sessionId;
             try {
@@ -80,7 +83,6 @@ export function Client({ id, initialMessages }: ClientProps) {
                                 error
                             );
                             toast.error("Xpra session not created");
-                            // throw error; // propagate upwards
                         }
                     }
 
@@ -117,15 +119,8 @@ export function Client({ id, initialMessages }: ClientProps) {
         },
     });
 
-    const [fragment, setFragment] = useState<
-        Record<string, CodeData["content"]>
-    >({});
-
-    useEffect(() => {
-        const code = extractCodeFromMessage(initialMessages?.at(-1));
-        setFragment(code);
-        setCurrentFile(Object.keys(code).at(0) ?? "");
-    }, []);
+    const [fragment, setFragment] =
+        useState<Record<string, CodeData["content"]>>(initialCode);
 
     useEffect(() => {
         if (!data) {
@@ -144,7 +139,6 @@ export function Client({ id, initialMessages }: ClientProps) {
             return;
         }
 
-        setCurrentFile(filePath);
         setFragment((prev) => ({
             ...prev,
             [filePath]: safeData.content,
