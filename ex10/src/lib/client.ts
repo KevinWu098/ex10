@@ -34,3 +34,20 @@ export const extractCodeFromMessage = (
         {} as Record<string, CodeData["content"]>
     );
 };
+
+// Extract code from all messages to restore complete fragment state
+export const extractCodeFromAllMessages = (
+    messages?: Array<Message>
+): Record<string, CodeData["content"]> => {
+    if (!messages?.length) return {};
+
+    const allCode: Record<string, CodeData["content"]> = {};
+
+    // Process all messages and accumulate code fragments
+    messages.forEach((message) => {
+        const messageCode = extractCodeFromMessage(message);
+        Object.assign(allCode, messageCode);
+    });
+
+    return allCode;
+};

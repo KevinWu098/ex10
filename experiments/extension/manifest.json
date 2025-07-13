@@ -1,7 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Yellow Background Extension",
+  "name": "Red Background Extension",
   "version": "1.0",
+  "description": "Changes the page background to red.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
   "content_scripts": [
     {
       "matches": [
@@ -15,9 +20,6 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": [
-    "scripting"
-  ],
   "host_permissions": [
     "http://localhost:8000/"
   ]

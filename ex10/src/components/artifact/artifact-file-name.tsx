@@ -17,14 +17,14 @@ export const ArtifactFileName = memo(
             return null;
         }
 
-        const { file_name } = files;
+        const { file_name, file_path } = files;
 
         if (!file_name) {
             return null;
         }
 
         const handleClick = () => {
-            setCurrentFile(file_name);
+            setCurrentFile(file_path);
         };
 
         return (

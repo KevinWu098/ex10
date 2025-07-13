@@ -18,8 +18,6 @@ export const SYSTEM_PROMPT = `
                 Explain your implementation choices clearly.
 
                 Make sure to correctly format the code (e.g. indentation, line breaks, etc.)
-
-                DO NOT CREATE THE SAME FILE MULTIPLE TIMES. DO NOT OUTPUT CODE IN TEXT IF YOU'VE WRITTEN IT USING A TOOL CALL.
                 `;
 
 // ==== DEVELOPER PROMPT ====

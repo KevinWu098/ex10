@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Artifact } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
-import { extractCodeFromMessage } from "@/lib/client";
+import {
+    extractCodeFromAllMessages,
+    extractCodeFromMessage,
+} from "@/lib/client";
 import { CodeData, CodeDataSchema } from "@/lib/data";
 import { generateUUID } from "@/lib/utils";
 import {
@@ -27,7 +30,7 @@ export function Client({ id, initialMessages }: ClientProps) {
     const [sessionId, setSessionId] = useState<string>();
     const [currentTab, setCurrentTab] = useState("code");
 
-    const initialCode = extractCodeFromMessage(initialMessages?.at(-1));
+    const initialCode = extractCodeFromAllMessages(initialMessages);
     const [currentFile, setCurrentFile] = useState<string>(
         Object.keys(initialCode).at(0) ?? ""
     );
@@ -61,6 +64,10 @@ export function Client({ id, initialMessages }: ClientProps) {
         },
         onFinish: async (message) => {
             const code = extractCodeFromMessage(message);
+            setFragment((prev) => ({
+                ...prev,
+                ...code,
+            }));
 
             let session = sessionId;
             try {
@@ -136,6 +143,9 @@ export function Client({ id, initialMessages }: ClientProps) {
             safeData.content;
         if (!filePath || !filePathFinished) {
             return;
+        }
+        if (!currentFile) {
+            setCurrentFile(filePath);
         }
 
         setFragment((prev) => ({
