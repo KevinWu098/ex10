@@ -16,6 +16,8 @@ set -e
 #                               --disable-extensions-except=/tmp/extension"w
 
 # Start the hot-reload watcher in the background first
-node /app/reload-watcher.mjs &
-# Start the server in the background
-node /app/server.js 
+# node /app/reload-watcher.mjs &
+# # Start the server in the background
+# node /app/server.js 
+
+npx extension@latest dev /tmp/extension --chromium-binary chromium --polyfill --open

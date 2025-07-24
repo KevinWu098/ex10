@@ -1,0 +1,11 @@
+{
+  "name": "extension-dev",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "extension dev",
+    "build": "extension build"
+  },
+  "devDependencies": {
+    "extension": "latest"
+  }
+}

@@ -16,6 +16,7 @@
         "chokidar": "^3.5.3"
     },
     "devDependencies": {
-        "nodemon": "^3.0.1"
+        "nodemon": "^3.0.1",
+        "extension": "latest"
     }
 }
