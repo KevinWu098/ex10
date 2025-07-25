@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Artifact } from "@/components/artifact/artifact";
 import { Chat } from "@/components/chat/chat";
 import {
@@ -30,7 +30,10 @@ export function Client({ id, initialMessages }: ClientProps) {
     const [sessionId, setSessionId] = useState<string>();
     const [currentTab, setCurrentTab] = useState("code");
 
-    const initialCode = extractCodeFromAllMessages(initialMessages);
+    const initialCode = useMemo(
+        () => extractCodeFromAllMessages(initialMessages),
+        [initialMessages]
+    );
     const [currentFile, setCurrentFile] = useState<string>(
         Object.keys(initialCode).at(0) ?? ""
     );

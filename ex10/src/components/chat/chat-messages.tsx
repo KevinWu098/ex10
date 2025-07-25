@@ -65,7 +65,7 @@ export const ChatMessages = memo(
                         messages.length > 0 &&
                         messages.at(messages.length - 1)?.role === "user" && (
                             <div className="group min-h-scroll-anchor flex w-full max-w-3xl flex-col items-start gap-2 px-6 pb-2">
-                                <LoaderIcon />
+                                <LoaderIcon className="animate-spin" />
                             </div>
                         )}
                 </ChatContainer>
