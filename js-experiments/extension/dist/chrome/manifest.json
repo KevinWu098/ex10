@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Extension.js Demo",
+  "version": "1.0.0",
+  "description": "A demo extension built with Extension.js",
+  "background": {
+    "service_worker": "background/service_worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content_scripts/content-0.js"
+      ],
+      "css": []
+    }
+  ],
+  "permissions": [
+    "scripting",
+    "activeTab",
+    "storage"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; "
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "/*.json",
+        "/*.js",
+        "/*.css",
+        "/*.scss",
+        "/*.sass",
+        "/*.less",
+        "*.styl"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

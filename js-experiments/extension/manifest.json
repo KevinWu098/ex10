@@ -1,0 +1,16 @@
+{
+    "manifest_version": 3,
+    "name": "Extension.js Demo",
+    "version": "1.0.0",
+    "description": "A demo extension built with Extension.js",
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["content-script.js"]
+        }
+    ],
+    "permissions": ["activeTab", "storage"]
+}

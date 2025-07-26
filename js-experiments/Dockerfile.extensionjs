@@ -1,0 +1,54 @@
+FROM debian:bullseye-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies including curl for Node.js setup
+RUN apt-get update && apt-get install -y \
+    xpra \
+    chromium \
+    xvfb \
+    python3-dbus \
+    python3-gi \
+    python3-pil \
+    python3-pyinotify \
+    python3-netifaces \
+    python3-xdg \
+    dbus-x11 \
+    x11-utils \
+    xauth \
+    curl \
+    gnupg \
+    ca-certificates \
+    xz-utils \
+    net-tools \
+    procps \
+    --no-install-recommends && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 18.x directly from official website
+RUN curl -fsSL https://nodejs.org/dist/v18.19.0/node-v18.19.0-linux-arm64.tar.xz | tar -xJ -C /usr/local --strip-components=1 && \
+    node --version && npm --version
+
+# Prepare environment
+RUN dbus-uuidgen > /etc/machine-id && mkdir -p /run/user/0 /tmp/extension
+
+# Working dir
+WORKDIR /app
+
+# Copy package.json and install dependencies
+COPY package.json /app/package.json
+RUN npm install
+
+# Copy start script
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+# Create a basic extension template if none exists
+RUN mkdir -p /tmp/extension && \
+    echo '{"manifest_version": 3, "name": "Test Extension", "version": "1.0", "action": {}}' > /tmp/extension/manifest.json
+
+# Port for xpra HTML client
+EXPOSE 10000
+
+# Entrypoint
+CMD ["/app/start.sh"]

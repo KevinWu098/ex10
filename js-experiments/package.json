@@ -1,0 +1,19 @@
+{
+    "name": "extension-js-xpra",
+    "version": "1.0.0",
+    "description": "Extension.js development environment with Xpra streaming",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "build": "extension@latest build",
+        "dev": "extension@latest dev",
+        "start": "extension start",
+        "dev:xpra": "./start.sh"
+    },
+    "devDependencies": {
+        "extension": "latest"
+    },
+    "dependencies": {
+        "express": "^4.18.2"
+    }
+}
