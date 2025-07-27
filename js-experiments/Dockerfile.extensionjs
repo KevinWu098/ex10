@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y \
     xpra \
     chromium \
     xvfb \
+    twm \
+    x11-utils \
     python3-dbus \
     python3-gi \
     python3-pil \
@@ -14,7 +16,6 @@ RUN apt-get update && apt-get install -y \
     python3-netifaces \
     python3-xdg \
     dbus-x11 \
-    x11-utils \
     xauth \
     curl \
     gnupg \
