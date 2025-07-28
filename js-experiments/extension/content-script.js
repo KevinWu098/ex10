@@ -18,10 +18,3 @@ indicator.style.cssText = `
 `;
 indicator.textContent = "Extension.js Active";
 document.body.appendChild(indicator);
-
-// Remove indicator after 3 seconds
-setTimeout(() => {
-    if (indicator.parentNode) {
-        indicator.parentNode.removeChild(indicator);
-    }
-}, 3000);
