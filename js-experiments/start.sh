@@ -6,9 +6,9 @@ echo "🚀 Starting Extension.js with Xpra remote access..."
 # Ensure extension directory exists
 mkdir -p /tmp/extension
 
-# Start virtual display
+# Start virtual display with reasonable size (matching common laptop screens)
 echo "📺 Starting display server..."
-Xvfb :99 -screen 0 1920x1080x24 -ac &
+Xvfb :99 -screen 0 1440x900x24 -ac &
 XVFB_PID=$!
 export DISPLAY=:99
 
@@ -28,7 +28,7 @@ EXTENSION_PID=$!
 # Wait for chromium to start
 sleep 10
 
-# Start xpra to share the display
+# Start xpra with better scaling and positioning options
 echo "📺 Starting Xpra remote access..."
 xpra shadow $DISPLAY \
     --bind-tcp=0.0.0.0:10000 \
@@ -36,7 +36,9 @@ xpra shadow $DISPLAY \
     --daemon=no \
     --notifications=no \
     --bell=no \
-    --mdns=no &
+    --mdns=no \
+    --desktop-scaling=auto \
+    --resize-display=yes &
 XPRA_PID=$!
 
 sleep 2
@@ -73,7 +75,9 @@ while true; do
             --daemon=no \
             --notifications=no \
             --bell=no \
-            --mdns=no &
+            --mdns=no \
+            --desktop-scaling=auto \
+            --resize-display=yes &
         XPRA_PID=$!
         sleep 2
     fi
