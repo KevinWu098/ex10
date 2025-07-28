@@ -1,14 +1,20 @@
 module.exports = {
     browser: {
-        chrome: {
+        "chromium-based": {
+            chromiumBinary: "/usr/bin/chromium",
             browserFlags: [
                 "--no-sandbox",
-                "--window-size=1200,800",
-                "--window-position=0,0", // Force to top-left corner
-                "--disable-default-apps",
-                "--no-first-run",
-                "--start-maximized",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--remote-debugging-port=9222",
             ],
+            excludeBrowserFlags: ["--mute-audio"],
+        },
+    },
+    commands: {
+        dev: {
+            browser: "chromium-based",
         },
     },
 };
