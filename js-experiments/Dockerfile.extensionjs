@@ -40,13 +40,16 @@ WORKDIR /app
 COPY package.json /app/package.json
 RUN npm install
 
+# Install Extension.js globally
+RUN npm install -g extension@latest
+
 # Copy start script
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-# Create a basic extension template if none exists
-RUN mkdir -p /tmp/extension && \
-    echo '{"manifest_version": 3, "name": "Test Extension", "version": "1.0", "action": {}}' > /tmp/extension/manifest.json
+# # Create a basic extension template if none exists
+# RUN mkdir -p /tmp/extension && \
+#     echo '{"manifest_version": 3, "name": "Test Extension", "version": "1.0", "action": {}}' > /tmp/extension/manifest.json
 
 # Port for xpra HTML client
 EXPOSE 10000

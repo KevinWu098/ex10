@@ -21,7 +21,8 @@ services:
             - "3001:3001" # Server port
             - "8000:8000" # Additional server port
         volumes:
-            - ./extension:/tmp/extension
+            # - ./extension:/tmp/extension
+            - ./react:/tmp/extension
         restart: unless-stopped
         environment:
             - DISPLAY=:100
